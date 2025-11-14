@@ -3,6 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { ClientesModule } from './clientes/clientes.module';
+import { ContratosModule } from './contratos/contratos.module';
+import { ImoveisModule } from './imoveis/imoveis.module';
+import { InteracoesModule } from './interacoes/interacoes.module';
 
 @Module({
   imports: [
@@ -10,6 +14,10 @@ import { PrismaModule } from './prisma/prisma.module';
       isGlobal: true,
     }),
     PrismaModule,
+    ClientesModule,
+    ContratosModule,
+    ImoveisModule,
+    InteracoesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
