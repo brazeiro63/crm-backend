@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+
+echo "🧪 Deploy CRM Backend DEV para VPS"
+echo "===================================="
+
+# Variáveis
+VPS_HOST="vps-cdm"
+VPS_PATH="/home/brazeiro63/crm-backend-dev"
+STACK_NAME="crm-stack-dev"
+
+# 1. Build da imagem Docker
+echo "📦 Building Docker image..."
+docker build -t crm-backend:dev .
+
+# 2. Salvar imagem
+echo "💾 Saving Docker image..."
+docker save crm-backend:dev | gzip > crm-backend-dev.tar.gz
+
+# 3. Criar diretório na VPS
+echo "📁 Creating directory on VPS..."
+ssh $VPS_HOST "mkdir -p $VPS_PATH"
+
+# 4. Enviar arquivos
+echo "📤 Uploading files..."
+scp crm-backend-dev.tar.gz $VPS_HOST:$VPS_PATH/
+scp docker-compose.dev.yml $VPS_HOST:$VPS_PATH/
+scp .env $VPS_HOST:$VPS_PATH/
+
+# 5. Carregar imagem
+echo "📥 Loading image on VPS..."
+ssh $VPS_HOST "cd $VPS_PATH && gunzip -c crm-backend-dev.tar.gz | docker load"
+
+# 6. Deploy
+echo "🐳 Deploying to Docker Swarm..."
+ssh $VPS_HOST "cd $VPS_PATH && docker stack deploy -c docker-compose.dev.yml $STACK_NAME"
+
+# 7. Limpar
+echo "🧹 Cleaning up..."
+rm -f crm-backend-dev.tar.gz
+ssh $VPS_HOST "cd $VPS_PATH && rm -f crm-backend-dev.tar.gz"
+
+echo "✅ DEV Deploy completed!"
+echo "🌐 API Dev: https://api-crm-dev.casasdemargarida.com/api"
+echo "📊 Status: ssh $VPS_HOST 'docker service ls | grep $STACK_NAME'"

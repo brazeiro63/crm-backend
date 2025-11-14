@@ -1,0 +1,189 @@
+// Schema do CRM - Casas de Margarida
+// Baseado no CRM_PLAN.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== USUÁRIOS ==========
+model Usuario {
+  id            String   @id @default(uuid())
+  nome          String
+  email         String   @unique
+  senha         String // hash bcrypt
+  papel         Papel    @default(OPERADOR)
+  ativo         Boolean  @default(true)
+  ultimoAcesso  DateTime?
+  dataCriacao   DateTime @default(now())
+
+  // Relacionamentos
+  contratosGerados ContratoGerado[]
+  interacoes       Interacao[]
+
+  @@map("usuarios")
+}
+
+enum Papel {
+  ADMIN
+  GERENTE
+  OPERADOR
+}
+
+// ========== CLIENTES CRM ==========
+model ClienteCRM {
+  id                String   @id @default(uuid())
+  staysClientId     String?  @unique // ID na Stays
+  nome              String
+  cpf               String   @unique
+  email             String
+  telefone          String
+
+  // Dados enriquecidos
+  tags              String[] // ["VIP", "Retorno frequente", etc]
+  score             Int      @default(0)
+  preferencias      Json?
+  observacoes       String?
+  origem            String?
+
+  // Metadados
+  dataCadastro      DateTime @default(now())
+  ultimaAtualizacao DateTime @updatedAt
+  ultimaReserva     DateTime?
+  totalReservas     Int      @default(0)
+  valorTotalGasto   Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Relacionamentos
+  contratos         ContratoGerado[]
+  interacoes        Interacao[]
+
+  @@map("clientes_crm")
+}
+
+// ========== CONTRATOS GERADOS ==========
+model ContratoGerado {
+  id                String   @id @default(uuid())
+  tipo              TipoContrato
+  clienteId         String
+  staysReservaId    String?  // Referência à reserva na Stays
+
+  // Dados do contrato
+  dadosContrato     Json     // Dados completos usados na geração
+  pdfUrl            String
+  status            StatusContrato @default(RASCUNHO)
+
+  // Metadados
+  geradoEm          DateTime @default(now())
+  geradoPor         String   // ID do usuário
+  versao            Int      @default(1)
+
+  // Relacionamentos
+  cliente           ClienteCRM @relation(fields: [clienteId], references: [id])
+  gerador           Usuario    @relation(fields: [geradoPor], references: [id])
+  interacoes        Interacao[]
+
+  @@map("contratos_gerados")
+}
+
+enum TipoContrato {
+  ADMINISTRACAO_IMOVEL
+  LOCACAO_TEMPORADA
+}
+
+enum StatusContrato {
+  RASCUNHO
+  GERADO
+  ASSINADO
+  CANCELADO
+}
+
+// ========== INTERAÇÕES ==========
+model Interacao {
+  id            String   @id @default(uuid())
+  clienteId     String
+  contratoId    String?
+
+  tipo          TipoInteracao
+  descricao     String   @db.Text
+  categoria     CategoriaInteracao
+
+  // Metadados
+  dataHora      DateTime @default(now())
+  registradoPor String   // ID do usuário
+  anexos        String[] // URLs de arquivos
+
+  // Relacionamentos
+  cliente       ClienteCRM      @relation(fields: [clienteId], references: [id])
+  contrato      ContratoGerado? @relation(fields: [contratoId], references: [id])
+  registrador   Usuario         @relation(fields: [registradoPor], references: [id])
+
+  @@map("interacoes")
+}
+
+enum TipoInteracao {
+  EMAIL
+  TELEFONE
+  WHATSAPP
+  PRESENCIAL
+  NOTA
+}
+
+enum CategoriaInteracao {
+  DUVIDA
+  RECLAMACAO
+  ELOGIO
+  SUPORTE
+  COMERCIAL
+}
+
+// ========== IMÓVEIS CRM ==========
+model ImovelCRM {
+  id                    String   @id @default(uuid())
+  staysImovelId         String?  @unique // ID na Stays
+
+  // Dados básicos
+  endereco              String
+  tipo                  String
+  capacidade            Int
+
+  // Dados operacionais
+  historicoManutencao   Json[]
+  custosOperacionais    Json[]
+  documentacao          String[] // URLs de documentos
+  observacoes           String?  @db.Text
+
+  // Metadados
+  ultimaVistoria        DateTime?
+  proximaManutencao     DateTime?
+  dataCadastro          DateTime @default(now())
+  ultimaAtualizacao     DateTime @updatedAt
+
+  @@map("imoveis_crm")
+}
+
+// ========== CACHE STAYS API ==========
+model StaysCache {
+  id          String   @id @default(uuid())
+  tipo        TipoStaysCache
+  staysId     String   // ID na Stays
+  dados       Json     // Dados completos da API
+
+  // Controle de cache
+  ultimaSync  DateTime @default(now())
+  proximaSync DateTime
+  versao      Int      @default(1)
+  ativo       Boolean  @default(true)
+
+  @@unique([tipo, staysId])
+  @@map("stays_cache")
+}
+
+enum TipoStaysCache {
+  CLIENTE
+  RESERVA
+  IMOVEL
+}
