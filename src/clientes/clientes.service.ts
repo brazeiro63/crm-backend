@@ -37,26 +37,39 @@ export class ClientesService {
       where.origem = origem;
     }
 
-    return this.prisma.clienteCRM.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { dataCadastro: 'desc' },
-      select: {
-        id: true,
-        nome: true,
-        cpf: true,
-        email: true,
-        telefone: true,
-        tags: true,
-        score: true,
-        origem: true,
-        dataCadastro: true,
-        ultimaReserva: true,
-        totalReservas: true,
-        valorTotalGasto: true,
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.clienteCRM.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { dataCadastro: 'desc' },
+        select: {
+          id: true,
+          nome: true,
+          cpf: true,
+          email: true,
+          telefone: true,
+          tags: true,
+          score: true,
+          origem: true,
+          dataCadastro: true,
+          ultimaReserva: true,
+          totalReservas: true,
+          valorTotalGasto: true,
+        },
+      }),
+      this.prisma.clienteCRM.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        skip,
+        take,
+        total,
+        hasMore: skip + data.length < total,
       },
-    });
+    };
   }
 
   async findOne(id: string) {

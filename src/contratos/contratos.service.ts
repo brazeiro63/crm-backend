@@ -27,29 +27,42 @@ export class ContratosService {
       where.status = status as any;
     }
 
-    return this.prisma.contratoGerado.findMany({
-      where,
-      skip,
-      take,
-      include: {
-        cliente: {
-          select: {
-            id: true,
-            nome: true,
-            cpf: true,
-            email: true,
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.contratoGerado.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nome: true,
+              cpf: true,
+              email: true,
+            },
+          },
+          gerador: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            },
           },
         },
-        gerador: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-          },
-        },
+        orderBy: { geradoEm: 'desc' },
+      }),
+      this.prisma.contratoGerado.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        skip,
+        take,
+        total,
+        hasMore: skip + data.length < total,
       },
-      orderBy: { geradoEm: 'desc' },
-    });
+    };
   }
 
   async findOne(id: string) {

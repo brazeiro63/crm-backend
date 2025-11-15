@@ -26,22 +26,35 @@ export class ImoveisService {
       where.tipo = tipo;
     }
 
-    return this.prisma.imovelCRM.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { dataCadastro: 'desc' },
-      select: {
-        id: true,
-        staysImovelId: true,
-        endereco: true,
-        tipo: true,
-        capacidade: true,
-        ultimaVistoria: true,
-        proximaManutencao: true,
-        dataCadastro: true,
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.imovelCRM.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { dataCadastro: 'desc' },
+        select: {
+          id: true,
+          staysImovelId: true,
+          endereco: true,
+          tipo: true,
+          capacidade: true,
+          ultimaVistoria: true,
+          proximaManutencao: true,
+          dataCadastro: true,
+        },
+      }),
+      this.prisma.imovelCRM.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        skip,
+        take,
+        total,
+        hasMore: skip + data.length < total,
       },
-    });
+    };
   }
 
   async findOne(id: string) {

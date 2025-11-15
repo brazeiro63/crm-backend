@@ -30,35 +30,48 @@ export class InteracoesService {
       where.clienteId = clienteId;
     }
 
-    return this.prisma.interacao.findMany({
-      where,
-      skip,
-      take,
-      include: {
-        cliente: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.interacao.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          cliente: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            },
+          },
+          contrato: {
+            select: {
+              id: true,
+              tipo: true,
+              status: true,
+            },
+          },
+          registrador: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            },
           },
         },
-        contrato: {
-          select: {
-            id: true,
-            tipo: true,
-            status: true,
-          },
-        },
-        registrador: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-          },
-        },
+        orderBy: { dataHora: 'desc' },
+      }),
+      this.prisma.interacao.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        skip,
+        take,
+        total,
+        hasMore: skip + data.length < total,
       },
-      orderBy: { dataHora: 'desc' },
-    });
+    };
   }
 
   async findOne(id: string) {

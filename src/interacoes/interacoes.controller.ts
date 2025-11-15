@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { InteracoesService } from './interacoes.service';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
@@ -13,8 +13,17 @@ export class InteracoesController {
   }
 
   @Get()
-  findAll() {
-    return this.interacoesService.findAll();
+  findAll(
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skipParam: number,
+    @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
+    @Query('tipo') tipo?: string,
+    @Query('categoria') categoria?: string,
+    @Query('clienteId') clienteId?: string,
+  ) {
+    const skip = Math.max(0, skipParam);
+    const take = Math.min(Math.max(1, takeParam), 100);
+
+    return this.interacoesService.findAll(skip, take, tipo, categoria, clienteId);
   }
 
   @Get(':id')

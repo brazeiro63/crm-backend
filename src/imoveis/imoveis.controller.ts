@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ImoveisService } from './imoveis.service';
 import { CreateImoveiDto } from './dto/create-imovei.dto';
 import { UpdateImoveiDto } from './dto/update-imovei.dto';
@@ -13,8 +13,15 @@ export class ImoveisController {
   }
 
   @Get()
-  findAll() {
-    return this.imoveisService.findAll();
+  findAll(
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skipParam: number,
+    @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
+    @Query('tipo') tipo?: string,
+  ) {
+    const skip = Math.max(0, skipParam);
+    const take = Math.min(Math.max(1, takeParam), 100);
+
+    return this.imoveisService.findAll(skip, take, tipo);
   }
 
   @Get(':id')

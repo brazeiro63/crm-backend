@@ -14,11 +14,14 @@ export class ClientesController {
 
   @Get()
   findAll(
-    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
-    @Query('take', new DefaultValuePipe(50), ParseIntPipe) take: number,
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skipParam: number,
+    @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
     @Query('tag') tag?: string,
     @Query('origem') origem?: string,
   ) {
+    const skip = Math.max(0, skipParam);
+    const take = Math.min(Math.max(1, takeParam), 100);
+
     return this.clientesService.findAll(skip, take, tag, origem);
   }
 

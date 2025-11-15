@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ContratosService } from './contratos.service';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
@@ -13,8 +13,16 @@ export class ContratosController {
   }
 
   @Get()
-  findAll() {
-    return this.contratosService.findAll();
+  findAll(
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skipParam: number,
+    @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
+    @Query('tipo') tipo?: string,
+    @Query('status') status?: string,
+  ) {
+    const skip = Math.max(0, skipParam);
+    const take = Math.min(Math.max(1, takeParam), 100);
+
+    return this.contratosService.findAll(skip, take, tipo, status);
   }
 
   @Get(':id')
