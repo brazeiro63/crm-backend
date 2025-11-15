@@ -19,16 +19,16 @@ export class ContratosController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.contratosService.findOne(+id);
+    return this.contratosService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateContratoDto: UpdateContratoDto) {
-    return this.contratosService.update(+id, updateContratoDto);
+    return this.contratosService.update(id, updateContratoDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.contratosService.remove(+id);
+    return this.contratosService.remove(id);
   }
 }

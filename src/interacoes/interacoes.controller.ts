@@ -19,16 +19,16 @@ export class InteracoesController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.interacoesService.findOne(+id);
+    return this.interacoesService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateInteracoeDto: UpdateInteracoeDto) {
-    return this.interacoesService.update(+id, updateInteracoeDto);
+    return this.interacoesService.update(id, updateInteracoeDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.interacoesService.remove(+id);
+    return this.interacoesService.remove(id);
   }
 }

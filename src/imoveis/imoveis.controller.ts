@@ -19,16 +19,16 @@ export class ImoveisController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.imoveisService.findOne(+id);
+    return this.imoveisService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateImoveiDto: UpdateImoveiDto) {
-    return this.imoveisService.update(+id, updateImoveiDto);
+    return this.imoveisService.update(id, updateImoveiDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.imoveisService.remove(+id);
+    return this.imoveisService.remove(id);
   }
 }

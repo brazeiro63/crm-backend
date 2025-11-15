@@ -1,26 +1,49 @@
 import { Injectable } from '@nestjs/common';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ContratosService {
-  create(createContratoDto: CreateContratoDto) {
-    return 'This action adds a new contrato';
+  constructor(private prisma: PrismaService) {}
+
+  async create(createContratoDto: CreateContratoDto) {
+    return this.prisma.contratoGerado.create({
+      data: createContratoDto as any,
+    });
   }
 
-  findAll() {
-    return `This action returns all contratos`;
+  async findAll() {
+    return this.prisma.contratoGerado.findMany({
+      include: {
+        cliente: true,
+        gerador: true,
+      },
+      orderBy: { geradoEm: 'desc' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} contrato`;
+  async findOne(id: string) {
+    return this.prisma.contratoGerado.findUnique({
+      where: { id },
+      include: {
+        cliente: true,
+        gerador: true,
+        interacoes: true,
+      },
+    });
   }
 
-  update(id: number, updateContratoDto: UpdateContratoDto) {
-    return `This action updates a #${id} contrato`;
+  async update(id: string, updateContratoDto: UpdateContratoDto) {
+    return this.prisma.contratoGerado.update({
+      where: { id },
+      data: updateContratoDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} contrato`;
+  async remove(id: string) {
+    return this.prisma.contratoGerado.delete({
+      where: { id },
+    });
   }
 }

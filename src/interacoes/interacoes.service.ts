@@ -1,26 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class InteracoesService {
-  create(createInteracoeDto: CreateInteracoeDto) {
-    return 'This action adds a new interacoe';
+  constructor(private prisma: PrismaService) {}
+
+  async create(createInteracoeDto: CreateInteracoeDto) {
+    return this.prisma.interacao.create({
+      data: createInteracoeDto as any,
+    });
   }
 
-  findAll() {
-    return `This action returns all interacoes`;
+  async findAll() {
+    return this.prisma.interacao.findMany({
+      include: {
+        cliente: true,
+        contrato: true,
+        registrador: true,
+      },
+      orderBy: { dataHora: 'desc' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} interacoe`;
+  async findOne(id: string) {
+    return this.prisma.interacao.findUnique({
+      where: { id },
+      include: {
+        cliente: true,
+        contrato: true,
+        registrador: true,
+      },
+    });
   }
 
-  update(id: number, updateInteracoeDto: UpdateInteracoeDto) {
-    return `This action updates a #${id} interacoe`;
+  async update(id: string, updateInteracoeDto: UpdateInteracoeDto) {
+    return this.prisma.interacao.update({
+      where: { id },
+      data: updateInteracoeDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} interacoe`;
+  async remove(id: string) {
+    return this.prisma.interacao.delete({
+      where: { id },
+    });
   }
 }

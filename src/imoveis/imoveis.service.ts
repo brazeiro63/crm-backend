@@ -1,26 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { CreateImoveiDto } from './dto/create-imovei.dto';
 import { UpdateImoveiDto } from './dto/update-imovei.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ImoveisService {
-  create(createImoveiDto: CreateImoveiDto) {
-    return 'This action adds a new imovei';
+  constructor(private prisma: PrismaService) {}
+
+  async create(createImoveiDto: CreateImoveiDto) {
+    return this.prisma.imovelCRM.create({
+      data: createImoveiDto as any,
+    });
   }
 
-  findAll() {
-    return `This action returns all imoveis`;
+  async findAll() {
+    return this.prisma.imovelCRM.findMany({
+      orderBy: { dataCadastro: 'desc' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} imovei`;
+  async findOne(id: string) {
+    return this.prisma.imovelCRM.findUnique({
+      where: { id },
+    });
   }
 
-  update(id: number, updateImoveiDto: UpdateImoveiDto) {
-    return `This action updates a #${id} imovei`;
+  async update(id: string, updateImoveiDto: UpdateImoveiDto) {
+    return this.prisma.imovelCRM.update({
+      where: { id },
+      data: updateImoveiDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} imovei`;
+  async remove(id: string) {
+    return this.prisma.imovelCRM.delete({
+      where: { id },
+    });
   }
 }
