@@ -9,7 +9,7 @@ export class ContratosService {
 
   async create(createContratoDto: CreateContratoDto) {
     return this.prisma.contratoGerado.create({
-      data: createContratoDto as any,
+      data: createContratoDto,
     });
   }
 

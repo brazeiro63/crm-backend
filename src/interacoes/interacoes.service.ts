@@ -9,7 +9,7 @@ export class InteracoesService {
 
   async create(createInteracoeDto: CreateInteracoeDto) {
     return this.prisma.interacao.create({
-      data: createInteracoeDto as any,
+      data: createInteracoeDto,
     });
   }
 

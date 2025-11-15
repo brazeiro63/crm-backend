@@ -9,7 +9,7 @@ export class ImoveisService {
 
   async create(createImoveiDto: CreateImoveiDto) {
     return this.prisma.imovelCRM.create({
-      data: createImoveiDto as any,
+      data: createImoveiDto,
     });
   }
 
