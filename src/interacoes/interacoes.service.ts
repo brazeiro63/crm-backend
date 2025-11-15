@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class InteracoesService {
@@ -9,42 +10,123 @@ export class InteracoesService {
 
   async create(createInteracoeDto: CreateInteracoeDto) {
     return this.prisma.interacao.create({
-      data: createInteracoeDto,
+      data: {
+        ...createInteracoeDto,
+        anexos: createInteracoeDto.anexos ?? [],
+      },
     });
   }
 
-  async findAll() {
+  async findAll(skip = 0, take = 50, tipo?: string, categoria?: string, clienteId?: string) {
+    const where: Prisma.InteracaoWhereInput = {};
+
+    if (tipo) {
+      where.tipo = tipo as any;
+    }
+    if (categoria) {
+      where.categoria = categoria as any;
+    }
+    if (clienteId) {
+      where.clienteId = clienteId;
+    }
+
     return this.prisma.interacao.findMany({
+      where,
+      skip,
+      take,
       include: {
-        cliente: true,
-        contrato: true,
-        registrador: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+        contrato: {
+          select: {
+            id: true,
+            tipo: true,
+            status: true,
+          },
+        },
+        registrador: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
       },
       orderBy: { dataHora: 'desc' },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.interacao.findUnique({
+    const interacao = await this.prisma.interacao.findUnique({
       where: { id },
       include: {
-        cliente: true,
-        contrato: true,
-        registrador: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            cpf: true,
+            email: true,
+            telefone: true,
+          },
+        },
+        contrato: {
+          select: {
+            id: true,
+            tipo: true,
+            status: true,
+            geradoEm: true,
+          },
+        },
+        registrador: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
       },
     });
+
+    if (!interacao) {
+      throw new NotFoundException(`Interação com ID ${id} não encontrada`);
+    }
+
+    return interacao;
   }
 
   async update(id: string, updateInteracoeDto: UpdateInteracoeDto) {
-    return this.prisma.interacao.update({
-      where: { id },
-      data: updateInteracoeDto,
-    });
+    try {
+      return await this.prisma.interacao.update({
+        where: { id },
+        data: updateInteracoeDto,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Interação com ID ${id} não encontrada`);
+        }
+      }
+      throw error;
+    }
   }
 
   async remove(id: string) {
-    return this.prisma.interacao.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.interacao.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Interação com ID ${id} não encontrada`);
+        }
+      }
+      throw error;
+    }
   }
 }

@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ContratosService {
@@ -9,41 +10,116 @@ export class ContratosService {
 
   async create(createContratoDto: CreateContratoDto) {
     return this.prisma.contratoGerado.create({
-      data: createContratoDto,
+      data: {
+        ...createContratoDto,
+        versao: createContratoDto.versao ?? 1,
+      },
     });
   }
 
-  async findAll() {
+  async findAll(skip = 0, take = 50, tipo?: string, status?: string) {
+    const where: Prisma.ContratoGeradoWhereInput = {};
+
+    if (tipo) {
+      where.tipo = tipo as any;
+    }
+    if (status) {
+      where.status = status as any;
+    }
+
     return this.prisma.contratoGerado.findMany({
+      where,
+      skip,
+      take,
       include: {
-        cliente: true,
-        gerador: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            cpf: true,
+            email: true,
+          },
+        },
+        gerador: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
       },
       orderBy: { geradoEm: 'desc' },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.contratoGerado.findUnique({
+    const contrato = await this.prisma.contratoGerado.findUnique({
       where: { id },
       include: {
-        cliente: true,
-        gerador: true,
-        interacoes: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            cpf: true,
+            email: true,
+            telefone: true,
+          },
+        },
+        gerador: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+          },
+        },
+        interacoes: {
+          select: {
+            id: true,
+            tipo: true,
+            categoria: true,
+            descricao: true,
+            dataHora: true,
+          },
+          orderBy: { dataHora: 'desc' },
+        },
       },
     });
+
+    if (!contrato) {
+      throw new NotFoundException(`Contrato com ID ${id} não encontrado`);
+    }
+
+    return contrato;
   }
 
   async update(id: string, updateContratoDto: UpdateContratoDto) {
-    return this.prisma.contratoGerado.update({
-      where: { id },
-      data: updateContratoDto,
-    });
+    try {
+      return await this.prisma.contratoGerado.update({
+        where: { id },
+        data: updateContratoDto,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Contrato com ID ${id} não encontrado`);
+        }
+      }
+      throw error;
+    }
   }
 
   async remove(id: string) {
-    return this.prisma.contratoGerado.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.contratoGerado.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Contrato com ID ${id} não encontrado`);
+        }
+      }
+      throw error;
+    }
   }
 }
