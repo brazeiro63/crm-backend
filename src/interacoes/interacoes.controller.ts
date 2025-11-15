@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { InteracoesService } from './interacoes.service';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
@@ -18,17 +18,17 @@ export class InteracoesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.interacoesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateInteracoeDto: UpdateInteracoeDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateInteracoeDto: UpdateInteracoeDto) {
     return this.interacoesService.update(id, updateInteracoeDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.interacoesService.remove(id);
   }
 }
