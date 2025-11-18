@@ -8,7 +8,7 @@ async function bootstrap() {
   // CORS configuration
   const corsOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
-    process.env.FRONTEND_URL_PROD || 'https://contratos.casasdemargarida.com',
+    process.env.FRONTEND_URL_PROD || 'https://contratos.casasdemargarida.com.br',
   ];
 
   app.enableCors({

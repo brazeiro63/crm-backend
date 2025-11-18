@@ -16,7 +16,12 @@ services:
       - PORT=3001
       - FRONTEND_URL=http://localhost:3000
       - STAYS_API_URL=${STAYS_API_URL}
-      - STAYS_API_KEY=${STAYS_API_KEY}
+      - STAYS_LOGIN_FILE=/run/secrets/stays_login
+      - STAYS_PASSWORD_FILE=/run/secrets/stays_password
+
+    secrets:
+      - stays_login
+      - stays_password
 
     networks:
       - CDMNet
@@ -42,3 +47,9 @@ networks:
   CDMNet:
     external: true
     name: CDMNet
+
+secrets:
+  stays_login:
+    external: true
+  stays_password:
+    external: true

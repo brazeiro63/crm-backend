@@ -74,7 +74,7 @@ Servidor rodando em: `http://localhost:3001/api`
 docker build -t crm-backend:dev .
 
 # Deploy no Swarm (dev)
-docker stack deploy -c docker-compose.dev.yml crm-stack-dev
+docker stack deploy -c docker-compose.dev.yml crm-backend-stack-dev
 ```
 
 Acessível em: `https://api-crm-dev.casasdemargarida.com.br/api`
@@ -86,7 +86,7 @@ Acessível em: `https://api-crm-dev.casasdemargarida.com.br/api`
 docker build -t crm-backend:latest .
 
 # Deploy no Swarm (produção)
-docker stack deploy -c docker-compose.yml crm-stack
+docker stack deploy -c docker-compose.yml crm-backend-stack
 ```
 
 Acessível em: `https://api-crm.casasdemargarida.com.br/api`
@@ -136,9 +136,12 @@ npx prisma validate
 | `JWT_EXPIRES_IN` | Tempo de expiração do token | `7d` |
 | `PORT` | Porta do servidor | `3001` |
 | `FRONTEND_URL` | URL do frontend (dev) | `http://localhost:3000` |
-| `FRONTEND_URL_PROD` | URL do frontend (prod) | `https://contratos.casasdemargarida.com` |
-| `STAYS_API_URL` | URL da API Stays | `https://api.stays.com.br` |
-| `STAYS_API_KEY` | Chave da API Stays | `your-api-key` |
+| `FRONTEND_URL_PROD` | URL do frontend (prod) | `https://contratos.casasdemargarida.com.br` |
+| `STAYS_API_URL` | URL da API Stays | `https://brazeiro.stays.net/external/v1/booking` |
+| `STAYS_LOGIN` | Login usado na autenticação Basic da Stays | `usuario@casasdemargarida.com.br` |
+| `STAYS_PASSWORD` | Senha do usuário da Stays | `sua-senha` |
+
+> Para execução em Docker Swarm, os scripts de deploy criam os secrets `stays_login` e `stays_password` a partir dos valores definidos no `.env`. Opcionalmente é possível definir `STAYS_LOGIN_FILE`/`STAYS_PASSWORD_FILE` apontando para arquivos montados em runtime (por exemplo, via Docker secrets personalizados).
 
 ## 📡 Endpoints
 
@@ -155,6 +158,23 @@ Base URL: `/api`
 - `/api/interactions` - Interações
 - `/api/properties` - Imóveis
 - `/api/stays` - Integração Stays
+
+### Integração Stays (temporária)
+- `GET /api/clientes/stays` - Lista clientes direto da API Stays com filtros
+- `GET /api/clientes/stays/:id` - Detalhes normalizados de um cliente Stays
+- `POST /api/clientes/sync` - Sincroniza clientes da Stays para o banco do CRM (body opcional `{"limit":100}`)
+- `POST /api/imoveis/sync` - Sincroniza imóveis da Stays para o banco do CRM (body opcional `{"limit":100}`)
+
+## 🔐 Docker Secrets
+
+- Secrets esperados: `stays_login` e `stays_password`
+- Os scripts `deploy.sh` e `deploy-dev.sh` criam/atualizam automaticamente esses secrets na VPS com base no `.env`
+- Para deploy manual:  
+  ```bash
+  echo "user@stays" | docker secret create stays_login -
+  echo "minha-senha" | docker secret create stays_password -
+  ```
+  (remova o secret antes de recriá-lo: `docker secret rm stays_login`)
 
 ## 🔧 Scripts NPM
 

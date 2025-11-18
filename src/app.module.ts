@@ -7,6 +7,7 @@ import { ClientesModule } from './clientes/clientes.module';
 import { ContratosModule } from './contratos/contratos.module';
 import { ImoveisModule } from './imoveis/imoveis.module';
 import { InteracoesModule } from './interacoes/interacoes.module';
+import { StaysModule } from './stays/stays.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { InteracoesModule } from './interacoes/interacoes.module';
       isGlobal: true,
     }),
     PrismaModule,
+    StaysModule,
     ClientesModule,
     ContratosModule,
     ImoveisModule,

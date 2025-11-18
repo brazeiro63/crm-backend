@@ -31,42 +31,42 @@ ssh vps-cdm 'docker service ls | grep crm'
 
 ### Ver logs do backend (dev)
 ```bash
-ssh vps-cdm 'docker service logs -f crm-stack-dev_crm-backend-dev'
+ssh vps-cdm 'docker service logs -f crm-backend-stack-dev_crm-backend-dev'
 ```
 
 ### Ver logs do backend (prod)
 ```bash
-ssh vps-cdm 'docker service logs -f crm-stack_crm-backend'
+ssh vps-cdm 'docker service logs -f crm-backend-stack_crm-backend'
 ```
 
 ### Remover stack (dev)
 ```bash
-ssh vps-cdm 'docker stack rm crm-stack-dev'
+ssh vps-cdm 'docker stack rm crm-backend-stack-dev'
 ```
 
 ### Remover stack (prod)
 ```bash
-ssh vps-cdm 'docker stack rm crm-stack'
+ssh vps-cdm 'docker stack rm crm-backend-stack'
 ```
 
 ### Escalar serviço
 ```bash
-ssh vps-cdm 'docker service scale crm-stack_crm-backend=2'
+ssh vps-cdm 'docker service scale crm-backend-stack_crm-backend=2'
 ```
 
 ### Ver detalhes do serviço
 ```bash
-ssh vps-cdm 'docker service inspect crm-stack_crm-backend'
+ssh vps-cdm 'docker service inspect crm-backend-stack_crm-backend'
 ```
 
 ### Atualizar apenas uma configuração (sem rebuild)
 ```bash
-ssh vps-cdm 'docker service update --env-add NEW_VAR=value crm-stack_crm-backend'
+ssh vps-cdm 'docker service update --env-add NEW_VAR=value crm-backend-stack_crm-backend'
 ```
 
 ### Forçar atualização (pull nova imagem)
 ```bash
-ssh vps-cdm 'docker service update --force crm-stack_crm-backend'
+ssh vps-cdm 'docker service update --force crm-backend-stack_crm-backend'
 ```
 
 ## 🗄️ Banco de Dados
@@ -96,10 +96,10 @@ ssh vps-cdm 'docker exec -i f706dc9c291d psql -U postgres -d crm -c "\dt"'
 ### Backend não inicia
 ```bash
 # Ver logs detalhados
-ssh vps-cdm 'docker service logs --tail 100 crm-stack_crm-backend'
+ssh vps-cdm 'docker service logs --tail 100 crm-backend-stack_crm-backend'
 
 # Ver tasks do serviço
-ssh vps-cdm 'docker service ps crm-stack_crm-backend'
+ssh vps-cdm 'docker service ps crm-backend-stack_crm-backend'
 ```
 
 ### Erro de conexão com banco
@@ -132,13 +132,13 @@ ssh vps-cdm 'docker image prune -a -f'
 3. **Deploy Dev**
    ```bash
    ./deploy-dev.sh
-   # Testar em https://api-crm-dev.casasdemargarida.com/api
+   # Testar em https://api-crm-dev.casasdemargarida.com.br/api
    ```
 
 4. **Deploy Produção**
    ```bash
    ./deploy.sh
-   # Verificar em https://api-crm.casasdemargarida.com/api
+   # Verificar em https://api-crm.casasdemargarida.com.br/api
    ```
 
 ## 🔐 Variáveis de Ambiente
@@ -156,4 +156,4 @@ JWT_SECRET="sua-chave-super-secreta"
 
 - **API Dev:** https://api-crm-dev.casasdemargarida.com.br/api
 - **API Prod:** https://api-crm.casasdemargarida.com.br/api
-- **Frontend:** https://contratos.casasdemargarida.com
+- **Frontend:** https://contratos.casasdemargarida.com.br

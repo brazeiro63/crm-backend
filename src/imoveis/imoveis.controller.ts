@@ -24,6 +24,13 @@ export class ImoveisController {
     return this.imoveisService.findAll(skip, take, tipo);
   }
 
+  @Post('sync')
+  syncFromStays(
+    @Body('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
+  ) {
+    return this.imoveisService.syncFromStays(limit);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.imoveisService.findOne(id);
