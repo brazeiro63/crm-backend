@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { CreateImoveiDto } from './dto/create-imovei.dto';
 import { UpdateImoveiDto } from './dto/update-imovei.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { InputJsonValue } from '@prisma/client/runtime/library';
-import { StaysService } from '../stays/stays.service';
+import {
+  StaysImovelBooking,
+  StaysProperty,
+  StaysService,
+} from '../stays/stays.service';
 
 @Injectable()
 export class ImoveisService {
+  private readonly logger = new Logger(ImoveisService.name);
+
   constructor(
     private prisma: PrismaService,
     private staysService: StaysService,
@@ -40,6 +46,7 @@ export class ImoveisService {
         select: {
           id: true,
           staysImovelId: true,
+          nome: true,
           endereco: true,
           tipo: true,
           capacidade: true,
@@ -112,6 +119,66 @@ export class ImoveisService {
     let updated = 0;
     let skipped = 0;
     const skippedReasons: Record<string, number> = {};
+    const propertyCache = new Map<string, StaysProperty | null>();
+
+    const pickFirstString = (...values: Array<string | null | undefined>) => {
+      for (const value of values) {
+        if (typeof value !== 'string') {
+          continue;
+        }
+        const trimmed = value.trim();
+        if (trimmed) {
+          return trimmed;
+        }
+      }
+      return undefined;
+    };
+
+    const pickFirstNumber = (...values: Array<number | null | undefined>) => {
+      for (const value of values) {
+        if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+          return value;
+        }
+      }
+      return undefined;
+    };
+
+    const formatAddress = (
+      address?:
+        | {
+            street?: string;
+            number?: string;
+            complement?: string;
+            neighborhood?: string;
+            city?: string;
+            state?: string;
+            country?: string;
+            zipcode?: string;
+          }
+        | null,
+    ) => {
+      if (!address) {
+        return undefined;
+      }
+      const parts = [
+        address.street,
+        address.number,
+        address.complement,
+        address.neighborhood,
+        address.city,
+        address.state,
+        address.country,
+        address.zipcode,
+      ]
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter(Boolean);
+
+      if (!parts.length) {
+        return undefined;
+      }
+
+      return parts.join(', ');
+    };
 
     while (true) {
       const response = await this.staysService.listImoveisPaginated(skip, limit);
@@ -130,21 +197,128 @@ export class ImoveisService {
           continue;
         }
 
-        const enderecoParts = [
-          imovel.address?.street,
-          imovel.address?.number,
-          imovel.address?.neighborhood,
-          imovel.address?.city,
-          imovel.address?.state,
-          imovel.address?.country,
-        ].filter(Boolean);
-
-        const endereco = enderecoParts.join(', ');
-
         try {
           const existing = await this.prisma.imovelCRM.findUnique({
             where: { staysImovelId: imovel._id },
           });
+
+          const hasNome =
+            Boolean(
+              pickFirstString(
+                imovel.name,
+                imovel.internalName,
+                imovel._mstitle?.pt_BR,
+                imovel._mstitle?.en_US,
+              ),
+            );
+          const hasEndereco = Boolean(formatAddress(imovel.address));
+          const lacksCapacity =
+            imovel.capacity == null &&
+            imovel._i_maxGuests == null;
+
+          let staysImovel = imovel;
+          let bookingImovel: StaysImovelBooking | null = null;
+          if (!hasNome || !hasEndereco || lacksCapacity) {
+            try {
+              const [detalhes, bookingDetalhes] = await Promise.all([
+                this.staysService.getImovelDetalhes(imovel._id),
+                this.staysService.getImovelBookingDetalhes(imovel._id),
+              ]);
+              if (detalhes) {
+                staysImovel = {
+                  ...detalhes,
+                  ...staysImovel,
+                  address: {
+                    ...(detalhes.address ?? {}),
+                    ...(staysImovel.address ?? {}),
+                  },
+                };
+              }
+              if (bookingDetalhes) {
+                bookingImovel = bookingDetalhes;
+              }
+            } catch (detailError) {
+              this.logger.warn(
+                `Não foi possível buscar detalhes adicionais do imóvel ${imovel._id}: ${detailError}`,
+              );
+            }
+          }
+
+          const propertyId =
+            staysImovel._idproperty ??
+            bookingImovel?._idproperty;
+
+          let property: StaysProperty | null = null;
+          if (propertyId && (!hasEndereco || !hasNome)) {
+            if (propertyCache.has(propertyId)) {
+              property = propertyCache.get(propertyId) ?? null;
+            } else {
+              try {
+                property = await this.staysService.getImovelPropertyDetalhes(propertyId);
+              } catch (propertyError) {
+                this.logger.warn(
+                  `Não foi possível buscar propriedade ${propertyId}: ${propertyError}`,
+                );
+                property = null;
+              }
+              propertyCache.set(propertyId, property);
+            }
+          }
+
+          const enderecoProperty = formatAddress(property?.address);
+          const enderecoPrimario = enderecoProperty ?? formatAddress(staysImovel.address);
+          const enderecoSecundario = formatAddress(bookingImovel?.address ?? null);
+          const endereco = enderecoPrimario ?? enderecoSecundario;
+          let resolvedNome =
+            pickFirstString(
+              staysImovel._mstitle?.pt_BR,
+              staysImovel.name,
+              staysImovel.internalName,
+              staysImovel.title,
+              staysImovel.displayName,
+              staysImovel.unitName,
+              bookingImovel?._mstitle?.pt_BR,
+              bookingImovel?.name,
+              bookingImovel?.internalName,
+              bookingImovel?.title,
+              bookingImovel?.displayName,
+              bookingImovel?.unitName,
+              property?._mstitle?.pt_BR,
+              property?.name,
+              property?.title,
+              property?.displayName,
+              staysImovel._mstitle?.en_US,
+              bookingImovel?._mstitle?.en_US,
+              property?._mstitle?.en_US,
+              existing?.nome,
+              endereco,
+            ) ?? 'Imóvel';
+          const resolvedEndereco =
+            pickFirstString(
+              endereco,
+              existing?.endereco,
+            ) ?? resolvedNome;
+
+          if (
+            resolvedNome &&
+            resolvedEndereco &&
+            resolvedNome.toLowerCase() === resolvedEndereco.toLowerCase()
+          ) {
+            const shortened = resolvedNome.split(',')[0]?.trim();
+            if (shortened && shortened.length) {
+              resolvedNome = shortened;
+            }
+          }
+
+          const resolvedCapacidade =
+            pickFirstNumber(
+              staysImovel.capacity,
+              staysImovel._i_maxGuests,
+              bookingImovel?.capacity,
+              bookingImovel?.maxGuests,
+              bookingImovel?._i_maxGuests,
+              existing?.capacidade,
+            ) ?? 0;
 
           const historicoManutencao = (existing?.historicoManutencao as InputJsonValue[]) ?? [];
           const custosOperacionais = (existing?.custosOperacionais as InputJsonValue[]) ?? [];
@@ -153,9 +327,10 @@ export class ImoveisService {
           await this.prisma.imovelCRM.upsert({
             where: { staysImovelId: imovel._id },
             update: {
-              endereco: endereco || imovel.name,
+              nome: resolvedNome,
+              endereco: resolvedEndereco,
               tipo: imovel.characteristics?.[0] ?? 'Imóvel',
-              capacidade: imovel.capacity ?? existing?.capacidade ?? 0,
+              capacidade: resolvedCapacidade,
               historicoManutencao,
               custosOperacionais,
               documentacao,
@@ -163,9 +338,10 @@ export class ImoveisService {
             },
             create: {
               staysImovelId: imovel._id,
-              endereco: endereco || imovel.name,
+              nome: resolvedNome,
+              endereco: resolvedEndereco,
               tipo: imovel.characteristics?.[0] ?? 'Imóvel',
-              capacidade: imovel.capacity ?? 0,
+              capacidade: resolvedCapacidade,
               historicoManutencao: [],
               custosOperacionais: [],
               documentacao: [],

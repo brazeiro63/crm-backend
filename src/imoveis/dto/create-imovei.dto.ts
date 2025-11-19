@@ -7,6 +7,9 @@ export class CreateImoveiDto {
   staysImovelId?: string;
 
   @IsString()
+  nome: string;
+
+  @IsString()
   endereco: string;
 
   @IsString()

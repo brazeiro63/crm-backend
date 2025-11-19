@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  ParseUUIDPipe,
   Query,
   ParseIntPipe,
   DefaultValuePipe,
@@ -32,11 +31,13 @@ export class ClientesController {
     @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
     @Query('tag') tag?: string,
     @Query('origem') origem?: string,
+    @Query('sort') sort?: string | string[],
   ) {
     const skip = Math.max(0, skipParam);
     const take = Math.min(Math.max(1, takeParam), 100);
+    const parsedSort = this.parseSortParams(sort);
 
-    return this.clientesService.findAll(skip, take, tag, origem);
+    return this.clientesService.findAll(skip, take, tag, origem, parsedSort);
   }
 
   @Post('sync')
@@ -92,17 +93,34 @@ export class ClientesController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id') id: string) {
     return this.clientesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateClienteDto: UpdateClienteDto) {
+  update(@Param('id') id: string, @Body() updateClienteDto: UpdateClienteDto) {
     return this.clientesService.update(id, updateClienteDto);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id') id: string) {
     return this.clientesService.remove(id);
+  }
+
+  private parseSortParams(sort?: string | string[]): { field: string; direction: 'asc' | 'desc' }[] | undefined {
+    if (!sort) {
+      return undefined;
+    }
+
+    const values = Array.isArray(sort) ? sort : [sort];
+    const parsed = values
+      .map((value) => {
+        const [field, dir] = value.split(':');
+        const direction = dir === 'asc' ? 'asc' : 'desc';
+        return field ? { field, direction } : null;
+      })
+      .filter((item): item is { field: string; direction: 'asc' | 'desc' } => Boolean(item));
+
+    return parsed.length ? parsed : undefined;
   }
 }

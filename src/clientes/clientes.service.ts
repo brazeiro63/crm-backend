@@ -20,11 +20,13 @@ export class ClientesService {
 
   async create(createClienteDto: CreateClienteDto) {
     try {
+      const { tags, score, cpf, ...rest } = createClienteDto;
       return await this.prisma.clienteCRM.create({
         data: {
-          ...createClienteDto,
-          tags: createClienteDto.tags ?? [],
-          score: createClienteDto.score ?? 0,
+          ...rest,
+          cpf: cpf ?? null,
+          tags: tags ?? [],
+          score: score ?? 0,
         },
       });
     } catch (error) {
@@ -37,7 +39,13 @@ export class ClientesService {
     }
   }
 
-  async findAll(skip = 0, take = 50, tag?: string, origem?: string) {
+  async findAll(
+    skip = 0,
+    take = 50,
+    tag?: string,
+    origem?: string,
+    sort?: { field: string; direction: 'asc' | 'desc' }[],
+  ) {
     const where: Prisma.ClienteCRMWhereInput = {};
 
     if (tag) {
@@ -47,12 +55,14 @@ export class ClientesService {
       where.origem = origem;
     }
 
+    const orderBy = this.buildOrderBy(sort);
+
     const [data, total] = await this.prisma.$transaction([
       this.prisma.clienteCRM.findMany({
         where,
         skip,
         take,
-        orderBy: { dataCadastro: 'desc' },
+        orderBy,
         select: {
           id: true,
           nome: true,
@@ -224,13 +234,8 @@ export class ClientesService {
           const cpfFromDocuments = detail.documents?.find((doc) =>
             doc.type?.toLowerCase().includes('cpf'),
           )?.numb;
-          const cpf = cpfFromDocuments?.replace(/\D/g, '');
-
-          if (!cpf || cpf.length < 11) {
-            skipped += 1;
-            skippedReasons['cpf_invalido'] = (skippedReasons['cpf_invalido'] ?? 0) + 1;
-            continue;
-          }
+          const cpfDigits = cpfFromDocuments?.replace(/\D/g, '');
+          const cpf = cpfDigits && cpfDigits.length >= 11 ? cpfDigits : null;
 
           if (!detail.email) {
             skipped += 1;
@@ -239,7 +244,8 @@ export class ClientesService {
           }
 
           const nome = `${detail.fName || ''} ${detail.lName || ''}`.trim() || detail.fName || detail.lName || 'Cliente Stays';
-          const telefone = detail.phones?.[0]?.num ?? '';
+          const primaryPhone = detail.phones?.[0];
+          const telefone = primaryPhone?.num ?? primaryPhone?.iso ?? '';
           const totalReservas = detail.reservations?.length ?? 0;
           const valorTotalGasto = detail.reservations?.reduce(
             (sum, reserva) => sum + (reserva.price?._f_total ?? 0),
@@ -310,6 +316,42 @@ export class ClientesService {
       skipped,
       skippedReasons,
     };
+  }
+
+  private buildOrderBy(
+    sort?: { field: string; direction: 'asc' | 'desc' }[],
+  ): Prisma.ClienteCRMOrderByWithRelationInput[] {
+    const allowedFields: Record<string, keyof Prisma.ClienteCRMOrderByWithRelationInput> = {
+      nome: 'nome',
+      email: 'email',
+      cpf: 'cpf',
+      telefone: 'telefone',
+      score: 'score',
+      dataCadastro: 'dataCadastro',
+      ultimaAtualizacao: 'ultimaAtualizacao',
+      ultimaReserva: 'ultimaReserva',
+      totalReservas: 'totalReservas',
+      valorTotalGasto: 'valorTotalGasto',
+      origem: 'origem',
+    };
+
+    const orderBy: Prisma.ClienteCRMOrderByWithRelationInput[] = [];
+
+    if (sort?.length) {
+      for (const item of sort) {
+        const field = allowedFields[item.field];
+        if (!field) {
+          continue;
+        }
+        orderBy.push({ [field]: item.direction });
+      }
+    }
+
+    if (!orderBy.length) {
+      orderBy.push({ dataCadastro: 'desc' });
+    }
+
+    return orderBy;
   }
 }
 

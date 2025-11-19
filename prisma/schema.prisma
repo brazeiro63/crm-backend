@@ -39,7 +39,7 @@ model ClienteCRM {
   id                String   @id @default(uuid())
   staysClientId     String?  @unique // ID na Stays
   nome              String
-  cpf               String   @unique
+  cpf               String?  @unique
   email             String
   telefone          String
 
@@ -144,6 +144,7 @@ enum CategoriaInteracao {
 model ImovelCRM {
   id                    String   @id @default(uuid())
   staysImovelId         String?  @unique // ID na Stays
+  nome                  String
 
   // Dados básicos
   endereco              String

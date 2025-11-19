@@ -9,11 +9,12 @@ export class CreateClienteDto {
   @Length(3, 100)
   nome: string;
 
+  @IsOptional()
   @IsString()
   @Matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/, {
     message: 'CPF deve estar no formato XXX.XXX.XXX-XX ou apenas 11 dígitos',
   })
-  cpf: string;
+  cpf?: string;
 
   @IsEmail()
   email: string;
