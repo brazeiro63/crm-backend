@@ -1,5 +1,14 @@
-import { IsString, IsInt, IsOptional, IsArray, IsDate } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsArray,
+  IsDate,
+  IsEnum,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { ImovelStatus } from '@prisma/client';
 
 export class CreateImoveiDto {
   @IsOptional()
@@ -17,6 +26,32 @@ export class CreateImoveiDto {
 
   @IsInt()
   capacidade: number;
+
+  @IsOptional()
+  @IsEnum(ImovelStatus)
+  status?: ImovelStatus;
+
+  @IsOptional()
+  @IsString()
+  responsavelLocal?: string;
+
+  @IsOptional()
+  @IsString()
+  responsavelContato?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  comodidades?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  fotos?: string[];
+
+  @IsOptional()
+  @IsObject()
+  instrucoes?: Record<string, any>;
 
   @IsOptional()
   @IsArray()

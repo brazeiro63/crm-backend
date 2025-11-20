@@ -150,6 +150,12 @@ model ImovelCRM {
   endereco              String
   tipo                  String
   capacidade            Int
+  status                ImovelStatus   @default(DISPONIVEL)
+  responsavelLocal      String?
+  responsavelContato    String?
+  comodidades           String[]       @default([])
+  fotos                 String[]       @default([])
+  instrucoes            Json?
 
   // Dados operacionais
   historicoManutencao   Json[]
@@ -164,6 +170,13 @@ model ImovelCRM {
   ultimaAtualizacao     DateTime @updatedAt
 
   @@map("imoveis_crm")
+}
+
+enum ImovelStatus {
+  DISPONIVEL
+  OCUPADO
+  MANUTENCAO
+  LIMPEZA
 }
 
 // ========== CACHE STAYS API ==========

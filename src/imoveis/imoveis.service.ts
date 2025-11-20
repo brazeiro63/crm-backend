@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { CreateImoveiDto } from './dto/create-imovei.dto';
 import { UpdateImoveiDto } from './dto/update-imovei.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, ImovelStatus } from '@prisma/client';
 import { InputJsonValue } from '@prisma/client/runtime/library';
 import {
   StaysImovelBooking,
@@ -20,12 +20,29 @@ export class ImoveisService {
   ) {}
 
   async create(createImoveiDto: CreateImoveiDto) {
+    const {
+      historicoManutencao,
+      custosOperacionais,
+      documentacao,
+      comodidades,
+      fotos,
+      instrucoes,
+      ...rest
+    } = createImoveiDto;
+    const instrucoesValue = instrucoes ? (instrucoes as InputJsonValue) : Prisma.JsonNull;
+
     return this.prisma.imovelCRM.create({
       data: {
-        ...createImoveiDto,
-        historicoManutencao: createImoveiDto.historicoManutencao ?? [],
-        custosOperacionais: createImoveiDto.custosOperacionais ?? [],
-        documentacao: createImoveiDto.documentacao ?? [],
+        ...rest,
+        status: createImoveiDto.status ?? ImovelStatus.DISPONIVEL,
+        responsavelLocal: createImoveiDto.responsavelLocal,
+        responsavelContato: createImoveiDto.responsavelContato,
+        historicoManutencao: historicoManutencao ?? [],
+        custosOperacionais: custosOperacionais ?? [],
+        documentacao: documentacao ?? [],
+        comodidades: comodidades ?? [],
+        fotos: fotos ?? [],
+        instrucoes: instrucoesValue,
       },
     });
   }
@@ -46,6 +63,12 @@ export class ImoveisService {
         select: {
           id: true,
           staysImovelId: true,
+          status: true,
+          responsavelLocal: true,
+          responsavelContato: true,
+          comodidades: true,
+          fotos: true,
+          instrucoes: true,
           nome: true,
           endereco: true,
           tipo: true,
@@ -342,6 +365,12 @@ export class ImoveisService {
               endereco: resolvedEndereco,
               tipo: imovel.characteristics?.[0] ?? 'Imóvel',
               capacidade: resolvedCapacidade,
+              status: existing?.status ?? ImovelStatus.DISPONIVEL,
+              responsavelLocal: existing?.responsavelLocal ?? null,
+              responsavelContato: existing?.responsavelContato ?? null,
+              comodidades: existing?.comodidades ?? [],
+              fotos: existing?.fotos ?? [],
+              instrucoes: existing?.instrucoes ?? Prisma.JsonNull,
               historicoManutencao: [],
               custosOperacionais: [],
               documentacao: [],
