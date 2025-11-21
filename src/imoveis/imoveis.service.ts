@@ -76,6 +76,7 @@ export class ImoveisService {
           ultimaVistoria: true,
           proximaManutencao: true,
           dataCadastro: true,
+          observacoes: true,
         },
       }),
       this.prisma.imovelCRM.count({ where }),

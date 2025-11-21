@@ -8,6 +8,7 @@ CREATE TYPE "StatusContrato" AS ENUM ('RASCUNHO', 'GERADO', 'ASSINADO', 'CANCELA
 CREATE TYPE "TipoInteracao" AS ENUM ('EMAIL', 'TELEFONE', 'WHATSAPP', 'PRESENCIAL', 'NOTA');
 CREATE TYPE "CategoriaInteracao" AS ENUM ('DUVIDA', 'RECLAMACAO', 'ELOGIO', 'SUPORTE', 'COMERCIAL');
 CREATE TYPE "TipoStaysCache" AS ENUM ('CLIENTE', 'RESERVA', 'IMOVEL');
+CREATE TYPE "ImovelStatus" AS ENUM ('DISPONIVEL', 'OCUPADO', 'MANUTENCAO', 'LIMPEZA');
 
 -- Tabela de Usuários
 CREATE TABLE "usuarios" (
@@ -80,9 +81,16 @@ CREATE TABLE "interacoes" (
 CREATE TABLE "imoveis_crm" (
     "id" TEXT NOT NULL,
     "staysImovelId" TEXT,
+    "nome" TEXT NOT NULL,
     "endereco" TEXT NOT NULL,
     "tipo" TEXT NOT NULL,
     "capacidade" INTEGER NOT NULL,
+    "status" "ImovelStatus" NOT NULL DEFAULT 'DISPONIVEL',
+    "responsavelLocal" TEXT,
+    "responsavelContato" TEXT,
+    "comodidades" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "fotos" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "instrucoes" JSONB,
     "historicoManutencao" JSONB[],
     "custosOperacionais" JSONB[],
     "documentacao" TEXT[],
