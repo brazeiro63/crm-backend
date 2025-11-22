@@ -10,7 +10,9 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
+  ParseEnumPipe,
 } from '@nestjs/common';
+import { StatusContrato, TipoContrato } from '@prisma/client';
 import { ContratosService } from './contratos.service';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
@@ -28,8 +30,10 @@ export class ContratosController {
   findAll(
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skipParam: number,
     @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
-    @Query('tipo') tipo?: string,
-    @Query('status') status?: string,
+    @Query('tipo', new ParseEnumPipe(TipoContrato, { optional: true }))
+    tipo?: TipoContrato,
+    @Query('status', new ParseEnumPipe(StatusContrato, { optional: true }))
+    status?: StatusContrato,
   ) {
     const skip = Math.max(0, skipParam);
     const take = Math.min(Math.max(1, takeParam), 100);

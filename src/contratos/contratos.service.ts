@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateContratoDto } from './dto/create-contrato.dto';
 import { UpdateContratoDto } from './dto/update-contrato.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, StatusContrato, TipoContrato } from '@prisma/client';
 
 @Injectable()
 export class ContratosService {
@@ -17,7 +17,12 @@ export class ContratosService {
     });
   }
 
-  async findAll(skip = 0, take = 50, tipo?: string, status?: string) {
+  async findAll(
+    skip = 0,
+    take = 50,
+    tipo?: TipoContrato,
+    status?: StatusContrato,
+  ) {
     const where: Prisma.ContratoGeradoWhereInput = {};
 
     if (tipo) {

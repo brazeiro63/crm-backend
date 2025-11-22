@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { CategoriaInteracao, Prisma, TipoInteracao } from '@prisma/client';
 
 @Injectable()
 export class InteracoesService {
@@ -20,8 +20,8 @@ export class InteracoesService {
   async findAll(
     skip = 0,
     take = 50,
-    tipo?: string,
-    categoria?: string,
+    tipo?: TipoInteracao,
+    categoria?: CategoriaInteracao,
     clienteId?: string,
   ) {
     const where: Prisma.InteracaoWhereInput = {};

@@ -60,7 +60,7 @@ const RESERVA_DETAIL_SELECT = {
       responsavel: true,
     },
     orderBy: {
-      dataPrevista: 'asc',
+      dataPrevista: Prisma.SortOrder.asc,
     },
   },
 };

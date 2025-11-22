@@ -10,7 +10,9 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
+  ParseEnumPipe,
 } from '@nestjs/common';
+import { CategoriaInteracao, TipoInteracao } from '@prisma/client';
 import { InteracoesService } from './interacoes.service';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
@@ -28,8 +30,13 @@ export class InteracoesController {
   findAll(
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skipParam: number,
     @Query('take', new DefaultValuePipe(50), ParseIntPipe) takeParam: number,
-    @Query('tipo') tipo?: string,
-    @Query('categoria') categoria?: string,
+    @Query('tipo', new ParseEnumPipe(TipoInteracao, { optional: true }))
+    tipo?: TipoInteracao,
+    @Query(
+      'categoria',
+      new ParseEnumPipe(CategoriaInteracao, { optional: true }),
+    )
+    categoria?: CategoriaInteracao,
     @Query('clienteId') clienteId?: string,
   ) {
     const skip = Math.max(0, skipParam);
