@@ -17,6 +17,7 @@ import { BookingSource, PaymentStatus, ReservaStatus } from '@prisma/client';
 import { ReservasService } from './reservas.service';
 import { CreateReservaDto } from './dto/create-reserva.dto';
 import { UpdateReservaDto } from './dto/update-reserva.dto';
+import { SyncReservasDto } from './dto/sync-reservas.dto';
 
 @Controller('reservas')
 export class ReservasController {
@@ -25,6 +26,11 @@ export class ReservasController {
   @Post()
   create(@Body() createReservaDto: CreateReservaDto) {
     return this.reservasService.create(createReservaDto);
+  }
+
+  @Post('sync')
+  syncFromStays(@Body() body: SyncReservasDto) {
+    return this.reservasService.syncFromStays(body);
   }
 
   @Get()

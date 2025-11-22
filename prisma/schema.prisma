@@ -40,8 +40,11 @@ model ClienteCRM {
   staysClientId     String?  @unique // ID na Stays
   nome              String
   cpf               String?  @unique
-  email             String
-  telefone          String
+  email             String?
+  emails            String[] @default([])
+  telefone          String?
+  telefones         String[] @default([])
+  documentos        Json?
 
   // Dados enriquecidos
   tags              String[] // ["VIP", "Retorno frequente", etc]

@@ -29,8 +29,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install only production dependencies
-RUN npm ci --only=production
+# Install only production dependencies (skip lifecycle scripts to evitar husky)
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy Prisma Client from builder
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma

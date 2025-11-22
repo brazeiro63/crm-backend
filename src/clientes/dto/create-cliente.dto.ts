@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsEmail,
   IsOptional,
   IsArray,
   IsInt,
@@ -9,7 +8,11 @@ import {
   IsObject,
   Min,
   Max,
+  IsEmail,
+  ValidateNested,
+  IsIn,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateClienteDto {
   @IsOptional()
@@ -27,14 +30,29 @@ export class CreateClienteDto {
   })
   cpf?: string;
 
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
+  @IsOptional()
+  @IsArray()
+  @IsEmail({}, { each: true })
+  emails?: string[];
+
+  @IsOptional()
   @IsString()
-  @Matches(/^(\+55\s?)?\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/, {
-    message: 'Telefone deve estar em formato brasileiro válido',
-  })
-  telefone: string;
+  telefone?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  telefones?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DocumentoDto)
+  documentos?: DocumentoDto[];
 
   @IsOptional()
   @IsArray()
@@ -59,4 +77,13 @@ export class CreateClienteDto {
   @IsOptional()
   @IsString()
   origem?: string;
+}
+
+export class DocumentoDto {
+  @IsString()
+  @IsIn(['CPF', 'DNI', 'PASSAPORTE', 'OUTRO'])
+  tipo: string;
+
+  @IsString()
+  numero: string;
 }

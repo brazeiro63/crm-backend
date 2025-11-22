@@ -24,11 +24,35 @@ export class ClientesService {
 
   async create(createClienteDto: CreateClienteDto) {
     try {
-      const { tags, score, cpf, ...rest } = createClienteDto;
+      const {
+        tags,
+        score,
+        cpf,
+        emails,
+        telefones,
+        documentos,
+        email,
+        telefone,
+        ...rest
+      } = createClienteDto;
+      const primaryEmail =
+        email ??
+        (Array.isArray(emails) && emails.length > 0 ? emails[0] : null);
+      const primaryPhone =
+        telefone ??
+        (Array.isArray(telefones) && telefones.length > 0
+          ? telefones[0]
+          : null);
+
       return await this.prisma.clienteCRM.create({
         data: {
           ...rest,
           cpf: cpf ?? null,
+          email: primaryEmail,
+          emails: emails ?? (primaryEmail ? [primaryEmail] : []),
+          telefone: primaryPhone,
+          telefones: telefones ?? (primaryPhone ? [primaryPhone] : []),
+          documentos: this.toJson(documentos),
           tags: tags ?? [],
           score: score ?? 0,
         },
@@ -74,7 +98,10 @@ export class ClientesService {
           nome: true,
           cpf: true,
           email: true,
+          emails: true,
           telefone: true,
+          telefones: true,
+          documentos: true,
           tags: true,
           score: true,
           origem: true,
@@ -134,9 +161,36 @@ export class ClientesService {
 
   async update(id: string, updateClienteDto: UpdateClienteDto) {
     try {
+      const {
+        tags,
+        score,
+        cpf,
+        emails,
+        telefones,
+        documentos,
+        email,
+        telefone,
+        ...rest
+      } = updateClienteDto;
+
+      const primaryEmail =
+        email ?? (emails && emails.length ? emails[0] : undefined);
+      const primaryPhone =
+        telefone ?? (telefones && telefones.length ? telefones[0] : undefined);
+
       return await this.prisma.clienteCRM.update({
         where: { id },
-        data: updateClienteDto,
+        data: {
+          ...rest,
+          cpf: cpf ?? undefined,
+          email: primaryEmail,
+          emails: emails ?? undefined,
+          telefone: primaryPhone,
+          telefones: telefones ?? undefined,
+          documentos: this.toJsonOrUndefined(documentos),
+          tags: tags ?? undefined,
+          score: score ?? undefined,
+        },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -249,13 +303,6 @@ export class ClientesService {
           const cpfDigits = cpfFromDocuments?.replace(/\D/g, '');
           const cpf = cpfDigits && cpfDigits.length >= 11 ? cpfDigits : null;
 
-          if (!detail.email) {
-            skipped += 1;
-            skippedReasons['email_ausente'] =
-              (skippedReasons['email_ausente'] ?? 0) + 1;
-            continue;
-          }
-
           const nome =
             `${detail.fName || ''} ${detail.lName || ''}`.trim() ||
             detail.fName ||
@@ -263,6 +310,19 @@ export class ClientesService {
             'Cliente Stays';
           const primaryPhone = detail.phones?.[0];
           const telefone = primaryPhone?.num ?? primaryPhone?.iso ?? '';
+          const telefones =
+            detail.phones
+              ?.map((p) => p.num || p.iso || '')
+              .map((p) => p.trim())
+              .filter(Boolean) ?? [];
+          const emails = detail.email ? [detail.email.trim()] : [];
+          const documentos =
+            detail.documents
+              ?.map((doc) => ({
+                tipo: doc.type?.toUpperCase() ?? 'OUTRO',
+                numero: doc.numb,
+              }))
+              .filter((doc) => !!doc.numero) ?? [];
           const totalReservas = detail.reservations?.length ?? 0;
           const valorTotalGasto =
             detail.reservations?.reduce(
@@ -293,8 +353,11 @@ export class ClientesService {
             update: {
               nome,
               cpf,
-              email: detail.email,
+              email: emails[0] ?? null,
+              emails,
               telefone,
+              telefones,
+              documentos,
               origem: cliente.kind,
               totalReservas,
               valorTotalGasto: new Decimal(valorTotalGasto.toFixed(2)),
@@ -304,8 +367,11 @@ export class ClientesService {
               staysClientId: cliente._id,
               nome,
               cpf,
-              email: detail.email,
+              email: emails[0] ?? null,
+              emails,
               telefone,
+              telefones,
+              documentos,
               tags: [],
               score: 0,
               origem: cliente.kind,
@@ -376,6 +442,25 @@ export class ClientesService {
     }
 
     return orderBy;
+  }
+
+  private toJson(value?: unknown | null): Prisma.InputJsonValue {
+    if (value === undefined || value === null) {
+      return Prisma.JsonNull as unknown as Prisma.InputJsonValue;
+    }
+    return value as unknown as Prisma.InputJsonValue;
+  }
+
+  private toJsonOrUndefined(
+    value?: unknown | null,
+  ): Prisma.InputJsonValue | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    if (value === null) {
+      return Prisma.JsonNull as unknown as Prisma.InputJsonValue;
+    }
+    return value as unknown as Prisma.InputJsonValue;
   }
 }
 
