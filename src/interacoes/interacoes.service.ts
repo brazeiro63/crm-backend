@@ -17,14 +17,20 @@ export class InteracoesService {
     });
   }
 
-  async findAll(skip = 0, take = 50, tipo?: string, categoria?: string, clienteId?: string) {
+  async findAll(
+    skip = 0,
+    take = 50,
+    tipo?: string,
+    categoria?: string,
+    clienteId?: string,
+  ) {
     const where: Prisma.InteracaoWhereInput = {};
 
     if (tipo) {
-      where.tipo = tipo as any;
+      where.tipo = tipo;
     }
     if (categoria) {
-      where.categoria = categoria as any;
+      where.categoria = categoria;
     }
     if (clienteId) {
       where.clienteId = clienteId;

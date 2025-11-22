@@ -21,10 +21,10 @@ export class ContratosService {
     const where: Prisma.ContratoGeradoWhereInput = {};
 
     if (tipo) {
-      where.tipo = tipo as any;
+      where.tipo = tipo;
     }
     if (status) {
-      where.status = status as any;
+      where.status = status;
     }
 
     const [data, total] = await this.prisma.$transaction([

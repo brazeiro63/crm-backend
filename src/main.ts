@@ -8,7 +8,8 @@ async function bootstrap() {
   // CORS configuration
   const corsOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
-    process.env.FRONTEND_URL_PROD || 'https://contratos.casasdemargarida.com.br',
+    process.env.FRONTEND_URL_PROD ||
+      'https://contratos.casasdemargarida.com.br',
   ];
 
   app.enableCors({
@@ -35,4 +36,5 @@ async function bootstrap() {
 
   console.log(`🚀 CRM Backend running on: http://localhost:${port}/api`);
 }
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();

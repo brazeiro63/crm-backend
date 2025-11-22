@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -32,7 +36,9 @@ export class ClientesService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException('Cliente com este CPF ou email já existe');
+          throw new ConflictException(
+            'Cliente com este CPF ou email já existe',
+          );
         }
       }
       throw error;
@@ -138,7 +144,9 @@ export class ClientesService {
           throw new NotFoundException(`Cliente com ID ${id} não encontrado`);
         }
         if (error.code === 'P2002') {
-          throw new ConflictException('CPF ou email já existe para outro cliente');
+          throw new ConflictException(
+            'CPF ou email já existe para outro cliente',
+          );
         }
       }
       throw error;
@@ -214,7 +222,10 @@ export class ClientesService {
     const skippedReasons: Record<string, number> = {};
 
     while (true) {
-      const response = await this.staysService.listClientesPaginated(skip, limit);
+      const response = await this.staysService.listClientesPaginated(
+        skip,
+        limit,
+      );
       const clientes = response?.data ?? [];
 
       if (!clientes.length) {
@@ -227,7 +238,8 @@ export class ClientesService {
           const detail = await this.staysService.getClienteById(cliente._id);
           if (!detail) {
             skipped += 1;
-            skippedReasons['detalhe_inexistente'] = (skippedReasons['detalhe_inexistente'] ?? 0) + 1;
+            skippedReasons['detalhe_inexistente'] =
+              (skippedReasons['detalhe_inexistente'] ?? 0) + 1;
             continue;
           }
 
@@ -239,29 +251,38 @@ export class ClientesService {
 
           if (!detail.email) {
             skipped += 1;
-            skippedReasons['email_ausente'] = (skippedReasons['email_ausente'] ?? 0) + 1;
+            skippedReasons['email_ausente'] =
+              (skippedReasons['email_ausente'] ?? 0) + 1;
             continue;
           }
 
-          const nome = `${detail.fName || ''} ${detail.lName || ''}`.trim() || detail.fName || detail.lName || 'Cliente Stays';
+          const nome =
+            `${detail.fName || ''} ${detail.lName || ''}`.trim() ||
+            detail.fName ||
+            detail.lName ||
+            'Cliente Stays';
           const primaryPhone = detail.phones?.[0];
           const telefone = primaryPhone?.num ?? primaryPhone?.iso ?? '';
           const totalReservas = detail.reservations?.length ?? 0;
-          const valorTotalGasto = detail.reservations?.reduce(
-            (sum, reserva) => sum + (reserva.price?._f_total ?? 0),
-            0,
-          ) ?? 0;
-          const ultimaReserva = detail.reservations?.reduce<string | null>((latest, reserva) => {
-            const data = reserva.checkInDate ?? reserva.checkOutDate;
-            if (!data) {
-              return latest;
-            }
-            const current = new Date(data).getTime();
-            if (!latest) {
-              return data;
-            }
-            return current > new Date(latest).getTime() ? data : latest;
-          }, null);
+          const valorTotalGasto =
+            detail.reservations?.reduce(
+              (sum, reserva) => sum + (reserva.price?._f_total ?? 0),
+              0,
+            ) ?? 0;
+          const ultimaReserva = detail.reservations?.reduce<string | null>(
+            (latest, reserva) => {
+              const data = reserva.checkInDate ?? reserva.checkOutDate;
+              if (!data) {
+                return latest;
+              }
+              const current = new Date(data).getTime();
+              if (!latest) {
+                return data;
+              }
+              return current > new Date(latest).getTime() ? data : latest;
+            },
+            null,
+          );
 
           const existing = await this.prisma.clienteCRM.findUnique({
             where: { staysClientId: cliente._id },
@@ -321,7 +342,10 @@ export class ClientesService {
   private buildOrderBy(
     sort?: { field: string; direction: 'asc' | 'desc' }[],
   ): Prisma.ClienteCRMOrderByWithRelationInput[] {
-    const allowedFields: Record<string, keyof Prisma.ClienteCRMOrderByWithRelationInput> = {
+    const allowedFields: Record<
+      string,
+      keyof Prisma.ClienteCRMOrderByWithRelationInput
+    > = {
       nome: 'nome',
       email: 'email',
       cpf: 'cpf',
@@ -355,7 +379,9 @@ export class ClientesService {
   }
 }
 
-const mapStaysClienteToResponse = (cliente: StaysClienteLike): ClienteStays => ({
+const mapStaysClienteToResponse = (
+  cliente: StaysClienteLike,
+): ClienteStays => ({
   id: cliente._id,
   nome: `${cliente.fName} ${cliente.lName}`.trim(),
   email: cliente.email,

@@ -107,7 +107,9 @@ export class ClientesController {
     return this.clientesService.remove(id);
   }
 
-  private parseSortParams(sort?: string | string[]): { field: string; direction: 'asc' | 'desc' }[] | undefined {
+  private parseSortParams(
+    sort?: string | string[],
+  ): { field: string; direction: 'asc' | 'desc' }[] | undefined {
     if (!sort) {
       return undefined;
     }
@@ -119,7 +121,9 @@ export class ClientesController {
         const direction = dir === 'asc' ? 'asc' : 'desc';
         return field ? { field, direction } : null;
       })
-      .filter((item): item is { field: string; direction: 'asc' | 'desc' } => Boolean(item));
+      .filter((item): item is { field: string; direction: 'asc' | 'desc' } =>
+        Boolean(item),
+      );
 
     return parsed.length ? parsed : undefined;
   }

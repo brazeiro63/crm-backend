@@ -1,4 +1,15 @@
-import { IsString, IsEmail, IsOptional, IsArray, IsInt, Matches, Length, IsObject, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsArray,
+  IsInt,
+  Matches,
+  Length,
+  IsObject,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreateClienteDto {
   @IsOptional()

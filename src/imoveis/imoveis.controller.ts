@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+  ParseIntPipe,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import { ImoveisService } from './imoveis.service';
 import { CreateImoveiDto } from './dto/create-imovei.dto';
 import { UpdateImoveiDto } from './dto/update-imovei.dto';
@@ -37,7 +49,10 @@ export class ImoveisController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateImoveiDto: UpdateImoveiDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateImoveiDto: UpdateImoveiDto,
+  ) {
     return this.imoveisService.update(id, updateImoveiDto);
   }
 

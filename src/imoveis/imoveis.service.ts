@@ -29,7 +29,9 @@ export class ImoveisService {
       instrucoes,
       ...rest
     } = createImoveiDto;
-    const instrucoesValue = instrucoes ? (instrucoes as InputJsonValue) : Prisma.JsonNull;
+    const instrucoesValue = instrucoes
+      ? (instrucoes as InputJsonValue)
+      : Prisma.JsonNull;
 
     return this.prisma.imovelCRM.create({
       data: {
@@ -168,18 +170,16 @@ export class ImoveisService {
     };
 
     const formatAddress = (
-      address?:
-        | {
-            street?: string;
-            number?: string;
-            complement?: string;
-            neighborhood?: string;
-            city?: string;
-            state?: string;
-            country?: string;
-            zipcode?: string;
-          }
-        | null,
+      address?: {
+        street?: string;
+        number?: string;
+        complement?: string;
+        neighborhood?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        zipcode?: string;
+      } | null,
     ) => {
       if (!address) {
         return undefined;
@@ -205,7 +205,10 @@ export class ImoveisService {
     };
 
     while (true) {
-      const response = await this.staysService.listImoveisPaginated(skip, limit);
+      const response = await this.staysService.listImoveisPaginated(
+        skip,
+        limit,
+      );
       const imoveis = response?.data ?? [];
 
       if (!imoveis.length) {
@@ -217,7 +220,8 @@ export class ImoveisService {
 
         if (!imovel._id) {
           skipped += 1;
-          skippedReasons['id_invalido'] = (skippedReasons['id_invalido'] ?? 0) + 1;
+          skippedReasons['id_invalido'] =
+            (skippedReasons['id_invalido'] ?? 0) + 1;
           continue;
         }
 
@@ -226,19 +230,17 @@ export class ImoveisService {
             where: { staysImovelId: imovel._id },
           });
 
-          const hasNome =
-            Boolean(
-              pickFirstString(
-                imovel.name,
-                imovel.internalName,
-                imovel._mstitle?.pt_BR,
-                imovel._mstitle?.en_US,
-              ),
-            );
+          const hasNome = Boolean(
+            pickFirstString(
+              imovel.name,
+              imovel.internalName,
+              imovel._mstitle?.pt_BR,
+              imovel._mstitle?.en_US,
+            ),
+          );
           const hasEndereco = Boolean(formatAddress(imovel.address));
           const lacksCapacity =
-            imovel.capacity == null &&
-            imovel._i_maxGuests == null;
+            imovel.capacity == null && imovel._i_maxGuests == null;
 
           let staysImovel = imovel;
           let bookingImovel: StaysImovelBooking | null = null;
@@ -269,8 +271,7 @@ export class ImoveisService {
           }
 
           const propertyId =
-            staysImovel._idproperty ??
-            bookingImovel?._idproperty;
+            staysImovel._idproperty ?? bookingImovel?._idproperty;
 
           let property: StaysProperty | null = null;
           if (propertyId && (!hasEndereco || !hasNome)) {
@@ -278,7 +279,8 @@ export class ImoveisService {
               property = propertyCache.get(propertyId) ?? null;
             } else {
               try {
-                property = await this.staysService.getImovelPropertyDetalhes(propertyId);
+                property =
+                  await this.staysService.getImovelPropertyDetalhes(propertyId);
               } catch (propertyError) {
                 this.logger.warn(
                   `Não foi possível buscar propriedade ${propertyId}: ${propertyError}`,
@@ -290,8 +292,11 @@ export class ImoveisService {
           }
 
           const enderecoProperty = formatAddress(property?.address);
-          const enderecoPrimario = enderecoProperty ?? formatAddress(staysImovel.address);
-          const enderecoSecundario = formatAddress(bookingImovel?.address ?? null);
+          const enderecoPrimario =
+            enderecoProperty ?? formatAddress(staysImovel.address);
+          const enderecoSecundario = formatAddress(
+            bookingImovel?.address ?? null,
+          );
           const endereco = enderecoPrimario ?? enderecoSecundario;
           let resolvedNome =
             pickFirstString(
@@ -318,10 +323,7 @@ export class ImoveisService {
               endereco,
             ) ?? 'Imóvel';
           const resolvedEndereco =
-            pickFirstString(
-              endereco,
-              existing?.endereco,
-            ) ?? resolvedNome;
+            pickFirstString(endereco, existing?.endereco) ?? resolvedNome;
 
           if (
             resolvedNome &&
@@ -344,8 +346,10 @@ export class ImoveisService {
               existing?.capacidade,
             ) ?? 0;
 
-          const historicoManutencao = (existing?.historicoManutencao as InputJsonValue[]) ?? [];
-          const custosOperacionais = (existing?.custosOperacionais as InputJsonValue[]) ?? [];
+          const historicoManutencao =
+            (existing?.historicoManutencao as InputJsonValue[]) ?? [];
+          const custosOperacionais =
+            (existing?.custosOperacionais as InputJsonValue[]) ?? [];
           const documentacao = existing?.documentacao ?? [];
 
           await this.prisma.imovelCRM.upsert({

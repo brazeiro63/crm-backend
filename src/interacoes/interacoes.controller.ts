@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+  ParseIntPipe,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import { InteracoesService } from './interacoes.service';
 import { CreateInteracoeDto } from './dto/create-interacoe.dto';
 import { UpdateInteracoeDto } from './dto/update-interacoe.dto';
@@ -23,7 +35,13 @@ export class InteracoesController {
     const skip = Math.max(0, skipParam);
     const take = Math.min(Math.max(1, takeParam), 100);
 
-    return this.interacoesService.findAll(skip, take, tipo, categoria, clienteId);
+    return this.interacoesService.findAll(
+      skip,
+      take,
+      tipo,
+      categoria,
+      clienteId,
+    );
   }
 
   @Get(':id')
@@ -32,7 +50,10 @@ export class InteracoesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateInteracoeDto: UpdateInteracoeDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateInteracoeDto: UpdateInteracoeDto,
+  ) {
     return this.interacoesService.update(id, updateInteracoeDto);
   }
 

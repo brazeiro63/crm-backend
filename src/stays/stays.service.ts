@@ -1,7 +1,10 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { readFileSync } from 'fs';
-import { StaysClientsResponse, StaysPropertiesResponse } from './dto/stays-client.dto';
+import {
+  StaysClientsResponse,
+  StaysPropertiesResponse,
+} from './dto/stays-client.dto';
 
 export interface StaysCliente {
   _id: string;
@@ -57,7 +60,7 @@ export interface StaysClientesFilters {
   hasReservations?: boolean;
   reservationFilter?: 'arrival' | 'departure';
   reservationFrom?: string; // YYYY-MM-DD
-  reservationTo?: string;   // YYYY-MM-DD
+  reservationTo?: string; // YYYY-MM-DD
 }
 
 export interface StaysImovel {
@@ -147,6 +150,69 @@ export interface StaysProperty {
   };
 }
 
+export interface StaysReservationPriceDetails {
+  currency?: string;
+  _f_total?: number;
+  hostingDetails?: {
+    fees?: Array<{ name?: string; _f_val?: number }>;
+    discounts?: Array<{ name?: string; _f_val?: number }>;
+    _f_nightPrice?: number;
+    _f_total?: number;
+  };
+  extrasDetails?: {
+    fees?: Array<{ name?: string; _f_val?: number }>;
+    extraServices?: Array<{ name?: string; _f_val?: number }>;
+    discounts?: Array<{ name?: string; _f_val?: number }>;
+    _f_total?: number;
+  };
+}
+
+export interface StaysReservation {
+  _id: string;
+  id?: string;
+  creationDate?: string;
+  checkInDate?: string;
+  checkInTime?: string;
+  checkOutDate?: string;
+  checkOutTime?: string;
+  _idlisting?: string;
+  _idclient?: string;
+  type?: string;
+  agent?: {
+    _id?: string;
+    name?: string;
+  };
+  price?: StaysReservationPriceDetails;
+  stats?: {
+    _f_totalPaid?: number;
+  };
+  guests?: number;
+  guestsDetails?: {
+    adults?: number;
+    children?: number;
+    infants?: number;
+  };
+  partner?: {
+    _id?: string;
+    name?: string;
+    commission?: {
+      type?: string;
+    };
+  };
+  reservationUrl?: string;
+}
+
+export interface StaysReservationsFilters {
+  from: string;
+  to: string;
+  dateType: 'arrival' | 'departure' | 'creation';
+  listingId?: string;
+  type?: string;
+  clientId?: string;
+  skip?: number;
+  limit?: number;
+}
+
 @Injectable()
 export class StaysService {
   private readonly apiUrl: string;
@@ -163,7 +229,9 @@ export class StaysService {
     const password = this.getSecretValue('STAYS_PASSWORD');
 
     if (!login || !password) {
-      throw new Error('STAYS_LOGIN e STAYS_PASSWORD devem ser configurados no .env');
+      throw new Error(
+        'STAYS_LOGIN e STAYS_PASSWORD devem ser configurados no .env',
+      );
     }
 
     const credentials = Buffer.from(`${login}:${password}`).toString('base64');
@@ -182,7 +250,7 @@ export class StaysService {
       url.search = '';
       url.hash = '';
       return url.toString().replace(/\/$/, '');
-    } catch (error) {
+    } catch {
       this.logger.warn(
         `STAYS_API_URL inválida (${value}). Usando URL padrão do serviço.`,
       );
@@ -200,8 +268,10 @@ export class StaysService {
     if (filePath) {
       try {
         return readFileSync(filePath, 'utf8').trim();
-      } catch (error) {
-        throw new Error(`Não foi possível ler o secret ${envKey}_FILE: ${filePath}`);
+      } catch {
+        throw new Error(
+          `Não foi possível ler o secret ${envKey}_FILE: ${filePath}`,
+        );
       }
     }
 
@@ -214,10 +284,16 @@ export class StaysService {
 
       if (filters) {
         if (filters.hasReservations !== undefined) {
-          url.searchParams.append('hasReservations', String(filters.hasReservations));
+          url.searchParams.append(
+            'hasReservations',
+            String(filters.hasReservations),
+          );
         }
         if (filters.reservationFilter) {
-          url.searchParams.append('reservationFilter', filters.reservationFilter);
+          url.searchParams.append(
+            'reservationFilter',
+            filters.reservationFilter,
+          );
         }
         if (filters.reservationFrom) {
           url.searchParams.append('reservationFrom', filters.reservationFrom);
@@ -242,7 +318,8 @@ export class StaysService {
         );
       }
 
-      return await response.json();
+      const data = (await response.json()) as StaysCliente[];
+      return data;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -252,6 +329,70 @@ export class StaysService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async listReservas(
+    filters: StaysReservationsFilters,
+  ): Promise<StaysReservation[]> {
+    if (!filters?.from || !filters?.to || !filters?.dateType) {
+      throw new HttpException(
+        'Parâmetros from, to e dateType são obrigatórios',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const url = new URL(`${this.apiUrl}/booking/reservations`);
+    url.searchParams.append('from', filters.from);
+    url.searchParams.append('to', filters.to);
+    url.searchParams.append('dateType', filters.dateType);
+
+    if (filters.listingId) {
+      url.searchParams.append('listingId', filters.listingId);
+    }
+
+    if (filters.type) {
+      url.searchParams.append('type', filters.type);
+    }
+
+    if (filters.clientId) {
+      url.searchParams.append('_idclient', filters.clientId);
+    }
+
+    if (typeof filters.skip === 'number') {
+      url.searchParams.append('skip', String(filters.skip));
+    }
+
+    if (typeof filters.limit === 'number') {
+      url.searchParams.append('limit', String(filters.limit));
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        Authorization: this.authHeader,
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new HttpException(
+        `Erro ao buscar reservas da Stays: ${response.statusText}`,
+        response.status,
+      );
+    }
+
+    const data = (await response.json().catch(() => null)) as
+      | StaysReservation[]
+      | null;
+
+    if (!Array.isArray(data)) {
+      throw new HttpException(
+        'Resposta inválida da Stays ao listar reservas',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+
+    return data;
   }
 
   async getClienteById(id: string): Promise<StaysClienteDetalhado | null> {
@@ -276,7 +417,8 @@ export class StaysService {
         );
       }
 
-      return await response.json();
+      const data = (await response.json()) as StaysClienteDetalhado;
+      return data;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -313,11 +455,14 @@ export class StaysService {
       );
     }
 
-    const payload = await response.json();
+    const payload = (await response.json()) as
+      | StaysCliente[]
+      | StaysClientsResponse;
     if (Array.isArray(payload)) {
+      const data: StaysCliente[] = payload;
       return {
-        data: payload,
-        total: payload.length,
+        data,
+        total: data.length,
         page: Math.floor(skip / limit) + 1,
         limit,
       };
@@ -325,7 +470,10 @@ export class StaysService {
     return payload;
   }
 
-  async listImoveisPaginated(skip = 0, limit = 100): Promise<StaysPropertiesResponse> {
+  async listImoveisPaginated(
+    skip = 0,
+    limit = 100,
+  ): Promise<StaysPropertiesResponse> {
     const url = new URL(`${this.apiUrl}/content/listings`);
     url.searchParams.set('skip', String(skip));
     url.searchParams.set('limit', String(limit));
@@ -347,11 +495,14 @@ export class StaysService {
       );
     }
 
-    const payload = await response.json();
+    const payload = (await response.json()) as
+      | StaysImovel[]
+      | StaysPropertiesResponse;
     if (Array.isArray(payload)) {
+      const data: StaysImovel[] = payload;
       return {
-        data: payload,
-        total: payload.length,
+        data,
+        total: data.length,
         page: Math.floor(skip / limit) + 1,
         limit,
       };
@@ -381,7 +532,8 @@ export class StaysService {
         );
       }
 
-      return await response.json();
+      const data = (await response.json()) as StaysImovel;
+      return data;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -393,7 +545,9 @@ export class StaysService {
     }
   }
 
-  async getImovelBookingDetalhes(id: string): Promise<StaysImovelBooking | null> {
+  async getImovelBookingDetalhes(
+    id: string,
+  ): Promise<StaysImovelBooking | null> {
     try {
       const url = `${this.apiUrl}/booking/listings/${id}`;
 
@@ -415,7 +569,8 @@ export class StaysService {
         );
       }
 
-      return await response.json();
+      const data = (await response.json()) as StaysImovelBooking;
+      return data;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -449,7 +604,8 @@ export class StaysService {
         );
       }
 
-      return await response.json();
+      const data = (await response.json()) as StaysProperty;
+      return data;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
