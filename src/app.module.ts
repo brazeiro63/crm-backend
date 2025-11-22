@@ -8,6 +8,7 @@ import { ContratosModule } from './contratos/contratos.module';
 import { ImoveisModule } from './imoveis/imoveis.module';
 import { InteracoesModule } from './interacoes/interacoes.module';
 import { StaysModule } from './stays/stays.module';
+import { ReservasModule } from './reservas/reservas.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StaysModule } from './stays/stays.module';
     ContratosModule,
     ImoveisModule,
     InteracoesModule,
+    ReservasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

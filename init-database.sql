@@ -9,6 +9,11 @@ CREATE TYPE "TipoInteracao" AS ENUM ('EMAIL', 'TELEFONE', 'WHATSAPP', 'PRESENCIA
 CREATE TYPE "CategoriaInteracao" AS ENUM ('DUVIDA', 'RECLAMACAO', 'ELOGIO', 'SUPORTE', 'COMERCIAL');
 CREATE TYPE "TipoStaysCache" AS ENUM ('CLIENTE', 'RESERVA', 'IMOVEL');
 CREATE TYPE "ImovelStatus" AS ENUM ('DISPONIVEL', 'OCUPADO', 'MANUTENCAO', 'LIMPEZA');
+CREATE TYPE "ReservaStatus" AS ENUM ('LEAD', 'ORCAMENTO', 'AGUARDANDO_PAGAMENTO', 'CONFIRMADO', 'CHECKIN_AGENDADO', 'ATIVO', 'CHECKOUT', 'CONCLUIDO', 'CANCELADO');
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDENTE', 'PAGO', 'PARCIAL', 'ATRASADO', 'ESTORNADO');
+CREATE TYPE "BookingSource" AS ENUM ('AIRBNB', 'BOOKING', 'DIRETO', 'EXPEDIA', 'OUTRO');
+CREATE TYPE "TarefaTipo" AS ENUM ('LIMPEZA', 'MANUTENCAO', 'VISTORIA', 'OUTRA');
+CREATE TYPE "TarefaStatus" AS ENUM ('PENDENTE', 'EM_PROGRESSO', 'CONCLUIDA', 'CANCELADA');
 
 -- Tabela de Usuários
 CREATE TABLE "usuarios" (
@@ -117,12 +122,67 @@ CREATE TABLE "stays_cache" (
     CONSTRAINT "stays_cache_pkey" PRIMARY KEY ("id")
 );
 
+-- Tabela de Reservas
+CREATE TABLE "reservas" (
+    "id" TEXT NOT NULL,
+    "staysReservaId" TEXT,
+    "imovelId" TEXT NOT NULL,
+    "clienteId" TEXT NOT NULL,
+    "status" "ReservaStatus" NOT NULL DEFAULT 'LEAD',
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'PENDENTE',
+    "origem" "BookingSource" NOT NULL DEFAULT 'DIRETO',
+    "canal" TEXT,
+    "checkIn" TIMESTAMP(3) NOT NULL,
+    "checkOut" TIMESTAMP(3) NOT NULL,
+    "totalHospedes" INTEGER NOT NULL DEFAULT 1,
+    "valorTotal" DECIMAL(10,2),
+    "sinal" DECIMAL(10,2),
+    "observacoes" TEXT,
+    "notasInternas" TEXT,
+    "pipelinePosicao" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "reservas_pkey" PRIMARY KEY ("id")
+);
+
+-- Tabela de Tarefas Operacionais
+CREATE TABLE "tarefas" (
+    "id" TEXT NOT NULL,
+    "tipo" "TarefaTipo" NOT NULL,
+    "status" "TarefaStatus" NOT NULL DEFAULT 'PENDENTE',
+    "descricao" TEXT,
+    "imovelId" TEXT,
+    "reservaId" TEXT,
+    "responsavel" TEXT,
+    "responsavelContato" TEXT,
+    "dataPrevista" TIMESTAMP(3),
+    "dataConclusao" TIMESTAMP(3),
+    "checklist" JSONB,
+    "fotos" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tarefas_pkey" PRIMARY KEY ("id")
+);
+
 -- Criar Índices Únicos
 CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios"("email");
 CREATE UNIQUE INDEX "clientes_crm_staysClientId_key" ON "clientes_crm"("staysClientId");
 CREATE UNIQUE INDEX "clientes_crm_cpf_key" ON "clientes_crm"("cpf");
 CREATE UNIQUE INDEX "imoveis_crm_staysImovelId_key" ON "imoveis_crm"("staysImovelId");
 CREATE UNIQUE INDEX "stays_cache_tipo_staysId_key" ON "stays_cache"("tipo", "staysId");
+CREATE UNIQUE INDEX "reservas_staysReservaId_key" ON "reservas"("staysReservaId");
+CREATE INDEX "reservas_imovel_idx" ON "reservas"("imovelId");
+CREATE INDEX "reservas_cliente_idx" ON "reservas"("clienteId");
+CREATE INDEX "reservas_status_idx" ON "reservas"("status");
+CREATE INDEX "reservas_payment_status_idx" ON "reservas"("paymentStatus");
+CREATE INDEX "reservas_origem_idx" ON "reservas"("origem");
+CREATE INDEX "reservas_checkin_idx" ON "reservas"("checkIn");
+CREATE INDEX "tarefas_imovel_idx" ON "tarefas"("imovelId");
+CREATE INDEX "tarefas_reserva_idx" ON "tarefas"("reservaId");
+CREATE INDEX "tarefas_status_idx" ON "tarefas"("status");
+CREATE INDEX "tarefas_tipo_idx" ON "tarefas"("tipo");
 
 -- Criar Foreign Keys
 ALTER TABLE "contratos_gerados" ADD CONSTRAINT "contratos_gerados_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "clientes_crm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -130,6 +190,10 @@ ALTER TABLE "contratos_gerados" ADD CONSTRAINT "contratos_gerados_geradoPor_fkey
 ALTER TABLE "interacoes" ADD CONSTRAINT "interacoes_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "clientes_crm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "interacoes" ADD CONSTRAINT "interacoes_contratoId_fkey" FOREIGN KEY ("contratoId") REFERENCES "contratos_gerados"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "interacoes" ADD CONSTRAINT "interacoes_registradoPor_fkey" FOREIGN KEY ("registradoPor") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "reservas" ADD CONSTRAINT "reservas_imovelId_fkey" FOREIGN KEY ("imovelId") REFERENCES "imoveis_crm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "reservas" ADD CONSTRAINT "reservas_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "clientes_crm"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "tarefas" ADD CONSTRAINT "tarefas_imovelId_fkey" FOREIGN KEY ("imovelId") REFERENCES "imoveis_crm"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "tarefas" ADD CONSTRAINT "tarefas_reservaId_fkey" FOREIGN KEY ("reservaId") REFERENCES "reservas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Criar tabela de migrations do Prisma
 CREATE TABLE "_prisma_migrations" (

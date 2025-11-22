@@ -60,6 +60,7 @@ model ClienteCRM {
   // Relacionamentos
   contratos         ContratoGerado[]
   interacoes        Interacao[]
+  reservas          Reserva[]
 
   @@map("clientes_crm")
 }
@@ -169,6 +170,10 @@ model ImovelCRM {
   dataCadastro          DateTime @default(now())
   ultimaAtualizacao     DateTime @updatedAt
 
+  // Relacionamentos
+  reservas              Reserva[]
+  tarefas               Tarefa[]
+
   @@map("imoveis_crm")
 }
 
@@ -200,4 +205,107 @@ enum TipoStaysCache {
   CLIENTE
   RESERVA
   IMOVEL
+}
+
+// ========== RESERVAS ==========
+model Reserva {
+  id              String          @id @default(uuid())
+  staysReservaId  String?         @unique
+  imovelId        String
+  clienteId       String
+  status          ReservaStatus   @default(LEAD)
+  paymentStatus   PaymentStatus   @default(PENDENTE)
+  origem          BookingSource   @default(DIRETO)
+  canal           String?
+  checkIn         DateTime
+  checkOut        DateTime
+  totalHospedes   Int             @default(1)
+  valorTotal      Decimal?        @db.Decimal(10, 2)
+  sinal           Decimal?        @db.Decimal(10, 2)
+  observacoes     String?
+  notasInternas   String?
+  pipelinePosicao Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  imovel          ImovelCRM       @relation(fields: [imovelId], references: [id])
+  cliente         ClienteCRM      @relation(fields: [clienteId], references: [id])
+  tarefas         Tarefa[]
+
+  @@map("reservas")
+  @@index([imovelId])
+  @@index([clienteId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([origem])
+  @@index([checkIn])
+}
+
+enum ReservaStatus {
+  LEAD
+  ORCAMENTO
+  AGUARDANDO_PAGAMENTO
+  CONFIRMADO
+  CHECKIN_AGENDADO
+  ATIVO
+  CHECKOUT
+  CONCLUIDO
+  CANCELADO
+}
+
+enum PaymentStatus {
+  PENDENTE
+  PAGO
+  PARCIAL
+  ATRASADO
+  ESTORNADO
+}
+
+enum BookingSource {
+  AIRBNB
+  BOOKING
+  DIRETO
+  EXPEDIA
+  OUTRO
+}
+
+// ========== TAREFAS OPERACIONAIS ==========
+model Tarefa {
+  id                 String        @id @default(uuid())
+  tipo               TarefaTipo
+  status             TarefaStatus  @default(PENDENTE)
+  descricao          String?
+  imovelId           String?
+  reservaId          String?
+  responsavel        String?
+  responsavelContato String?
+  dataPrevista       DateTime?
+  dataConclusao      DateTime?
+  checklist          Json?
+  fotos              String[]      @default([])
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  imovel             ImovelCRM?    @relation(fields: [imovelId], references: [id])
+  reserva            Reserva?      @relation(fields: [reservaId], references: [id])
+
+  @@map("tarefas")
+  @@index([imovelId])
+  @@index([reservaId])
+  @@index([status])
+  @@index([tipo])
+}
+
+enum TarefaTipo {
+  LIMPEZA
+  MANUTENCAO
+  VISTORIA
+  OUTRA
+}
+
+enum TarefaStatus {
+  PENDENTE
+  EM_PROGRESSO
+  CONCLUIDA
+  CANCELADA
 }
