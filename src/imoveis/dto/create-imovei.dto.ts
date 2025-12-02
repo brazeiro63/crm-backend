@@ -1,6 +1,7 @@
 import {
   IsString,
   IsInt,
+  IsNumber,
   IsOptional,
   IsArray,
   IsDate,
@@ -21,11 +22,60 @@ export class CreateImoveiDto {
   @IsString()
   endereco: string;
 
+  @IsOptional()
+  @IsString()
+  rua?: string;
+
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
+  @IsOptional()
+  @IsString()
+  complemento?: string;
+
+  @IsOptional()
+  @IsString()
+  bairro?: string;
+
+  @IsOptional()
+  @IsString()
+  cidade?: string;
+
+  @IsOptional()
+  @IsString()
+  estado?: string;
+
+  @IsOptional()
+  @IsString()
+  cep?: string;
+
+  @IsOptional()
+  @IsString()
+  apartamento?: string;
+
   @IsString()
   tipo: string;
 
   @IsInt()
   capacidade: number;
+
+  @IsOptional()
+  @IsString()
+  matricula?: string;
+
+  @IsOptional()
+  @IsString()
+  cartorio?: string;
+
+  @IsOptional()
+  @IsString()
+  inscricaoMunicipal?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  valorMinimoDiaria?: number;
 
   @IsOptional()
   @IsEnum(ImovelStatus)

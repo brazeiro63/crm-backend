@@ -73,8 +73,20 @@ export class ImoveisService {
           instrucoes: true,
           nome: true,
           endereco: true,
+          rua: true,
+          numero: true,
+          complemento: true,
+          bairro: true,
+          cidade: true,
+          estado: true,
+          cep: true,
+          apartamento: true,
           tipo: true,
           capacidade: true,
+          matricula: true,
+          cartorio: true,
+          inscricaoMunicipal: true,
+          valorMinimoDiaria: true,
           ultimaVistoria: true,
           proximaManutencao: true,
           dataCadastro: true,
@@ -346,6 +358,55 @@ export class ImoveisService {
               existing?.capacidade,
             ) ?? 0;
 
+          const resolvedRua = pickFirstString(
+            existing?.rua,
+            property?.address?.street,
+            staysImovel.address?.street,
+            bookingImovel?.address?.street,
+          );
+          const resolvedNumero = pickFirstString(
+            existing?.numero,
+            property?.address?.number,
+            staysImovel.address?.number,
+            bookingImovel?.address?.number,
+          );
+          const resolvedComplemento = pickFirstString(
+            existing?.complemento,
+            property?.address?.complement,
+            staysImovel.address?.complement,
+            bookingImovel?.address?.complement,
+          );
+          const resolvedBairro = pickFirstString(
+            existing?.bairro,
+            property?.address?.neighborhood,
+            staysImovel.address?.neighborhood,
+            bookingImovel?.address?.neighborhood,
+          );
+          const resolvedCidade = pickFirstString(
+            existing?.cidade,
+            property?.address?.city,
+            staysImovel.address?.city,
+            bookingImovel?.address?.city,
+          );
+          const resolvedEstado = pickFirstString(
+            existing?.estado,
+            property?.address?.state,
+            staysImovel.address?.state,
+            bookingImovel?.address?.state,
+          );
+          const resolvedCep = pickFirstString(
+            existing?.cep,
+            property?.address?.zipcode,
+            staysImovel.address?.zipcode,
+            bookingImovel?.address?.zipcode,
+          );
+          const resolvedApartamento = pickFirstString(
+            existing?.apartamento,
+            staysImovel.address?.complement,
+            bookingImovel?.address?.complement,
+            property?.address?.complement,
+          );
+
           const historicoManutencao =
             (existing?.historicoManutencao as InputJsonValue[]) ?? [];
           const custosOperacionais =
@@ -357,6 +418,14 @@ export class ImoveisService {
             update: {
               nome: resolvedNome,
               endereco: resolvedEndereco,
+              rua: resolvedRua,
+              numero: resolvedNumero,
+              complemento: resolvedComplemento,
+              bairro: resolvedBairro,
+              cidade: resolvedCidade,
+              estado: resolvedEstado,
+              cep: resolvedCep,
+              apartamento: resolvedApartamento,
               tipo: imovel.characteristics?.[0] ?? 'Imóvel',
               capacidade: resolvedCapacidade,
               historicoManutencao,
@@ -368,6 +437,14 @@ export class ImoveisService {
               staysImovelId: imovel._id,
               nome: resolvedNome,
               endereco: resolvedEndereco,
+              rua: resolvedRua,
+              numero: resolvedNumero,
+              complemento: resolvedComplemento,
+              bairro: resolvedBairro,
+              cidade: resolvedCidade,
+              estado: resolvedEstado,
+              cep: resolvedCep,
+              apartamento: resolvedApartamento,
               tipo: imovel.characteristics?.[0] ?? 'Imóvel',
               capacidade: resolvedCapacidade,
               status: existing?.status ?? ImovelStatus.DISPONIVEL,

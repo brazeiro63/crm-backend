@@ -152,8 +152,20 @@ model ImovelCRM {
 
   // Dados básicos
   endereco              String
+  rua                   String?
+  numero                String?
+  complemento           String?
+  bairro                String?
+  cidade                String?
+  estado                String?
+  cep                   String?
+  apartamento           String?
   tipo                  String
   capacidade            Int
+  matricula             String?
+  cartorio              String?
+  inscricaoMunicipal    String?
+  valorMinimoDiaria     Decimal? @db.Decimal(10, 2)
   status                ImovelStatus   @default(DISPONIVEL)
   responsavelLocal      String?
   responsavelContato    String?
